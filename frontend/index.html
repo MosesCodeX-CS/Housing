@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="NyumbaFind — Find verified rental houses in Kenya instantly. Browse real listings in Rongai, Roysambu, Juja, Pipeline and more. Real caretakers, real prices.">
+  <title>NyumbaFind — Real Houses. Real Caretakers. Real Fast.</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+</head>
+<body>
+
+<!-- ═══ NAVBAR ═══════════════════════════════════════ -->
+<nav class="navbar">
+  <div class="navbar__inner">
+    <a href="index.html" class="navbar__logo">
+      <div class="navbar__logo-icon">🏠</div>
+      Nyumba<span>Find</span>
+    </a>
+    <ul class="navbar__links">
+      <li><a href="index.html" class="active">Home</a></li>
+      <li><a href="listings.html">Browse</a></li>
+      <li><a href="dashboard.html">List Property</a></li>
+      <li><a href="index.html#how-it-works">How it Works</a></li>
+    </ul>
+    <div class="navbar__actions">
+      <div id="nav-auth-area">
+        <a href="auth.html" class="btn btn--secondary btn--sm">Login / Sign Up</a>
+      </div>
+    </div>
+    <button class="navbar__mobile-toggle" id="mobile-toggle">☰</button>
+  </div>
+</nav>
+
+<!-- ═══ HERO ══════════════════════════════════════════ -->
+<section class="hero">
+  <div class="container">
+    <div class="hero__inner">
+      <div class="hero__tag">🇰🇪 Kenya's Most Trusted Rental Platform</div>
+      <h1 class="hero__title">Find Your Next Home<br>in <em>Minutes, Not Weeks</em></h1>
+      <p class="hero__subtitle">Verified listings. Real caretakers. Direct WhatsApp contact. No fake listings, no wasted trips.</p>
+
+      <!-- Search Bar -->
+      <div class="hero__search">
+        <div class="search-bar" id="main-search-bar">
+          <div class="search-bar__input-wrap">
+            <span style="font-size:1.2rem">🔍</span>
+            <input type="text" class="search-bar__input" id="search-input" placeholder="Search estate, type, or keyword..." autocomplete="off">
+          </div>
+          <div class="search-bar__divider"></div>
+          <select class="search-bar__select" id="search-estate-filter">
+            <option value="">All Estates</option>
+          </select>
+          <div class="search-bar__divider"></div>
+          <select class="search-bar__select" id="search-type-filter">
+            <option value="">Any Type</option>
+            <option value="single_room">Single Room</option>
+            <option value="bedsitter">Bedsitter</option>
+            <option value="studio">Studio</option>
+            <option value="1br">1 Bedroom</option>
+            <option value="2br">2 Bedroom</option>
+            <option value="3br">3 Bedroom</option>
+          </select>
+          <button class="search-bar__btn" id="search-btn">🔍 Search</button>
+        </div>
+      </div>
+
+      <div class="hero__stats">
+        <div class="hero__stat">
+          <div class="hero__stat-num" id="stat-listings">—</div>
+          <div class="hero__stat-label">Verified Listings</div>
+        </div>
+        <div class="hero__stat">
+          <div class="hero__stat-num" id="stat-estates">—</div>
+          <div class="hero__stat-label">Estates Covered</div>
+        </div>
+        <div class="hero__stat">
+          <div class="hero__stat-num">24h</div>
+          <div class="hero__stat-label">Verification Time</div>
+        </div>
+        <div class="hero__stat">
+          <div class="hero__stat-num">0</div>
+          <div class="hero__stat-label">Viewing Fees</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ ESTATES ══════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-header__label">📍 Browse by Estate</div>
+      <h2 class="section-header__title">Where Do You Want to Live?</h2>
+      <p class="section-header__sub">Select an estate to see all available vacancies right now.</p>
+    </div>
+    <div class="grid-4" id="estates-grid" style="margin-bottom: var(--space-xl)">
+      <!-- skeleton -->
+      <div class="skeleton" style="height:120px;border-radius:16px"></div>
+      <div class="skeleton" style="height:120px;border-radius:16px"></div>
+      <div class="skeleton" style="height:120px;border-radius:16px"></div>
+      <div class="skeleton" style="height:120px;border-radius:16px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FEATURED LISTINGS ═════════════════════════════ -->
+<section class="section section--alt">
+  <div class="container">
+    <div class="flex-between mb-xl">
+      <div class="section-header" style="margin-bottom:0">
+        <div class="section-header__label">⭐ Featured</div>
+        <h2 class="section-header__title">Top Listings This Week</h2>
+      </div>
+      <a href="listings.html" class="btn btn--outline">View All →</a>
+    </div>
+    <div class="grid-3" id="featured-grid">
+      <!-- Skeleton -->
+      <div class="skeleton" style="height:320px;border-radius:16px"></div>
+      <div class="skeleton" style="height:320px;border-radius:16px"></div>
+      <div class="skeleton" style="height:320px;border-radius:16px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ HOW IT WORKS ══════════════════════════════════ -->
+<section class="section" id="how-it-works">
+  <div class="container">
+    <div class="section-header" style="text-align:center">
+      <div class="section-header__label">🔄 The Process</div>
+      <h2 class="section-header__title">How NyumbaFind Works</h2>
+      <p class="section-header__sub">Find and move into your next home in just 3 steps.</p>
+    </div>
+    <div class="grid-3" style="margin-top:var(--space-2xl)">
+      <div class="card" style="text-align:center;padding:var(--space-2xl)">
+        <div style="font-size:3rem;margin-bottom:var(--space-lg)">🔍</div>
+        <h3>1. Search</h3>
+        <p class="text-muted mt-sm">Browse listings by estate, price, and house type. All listings are real and recently confirmed.</p>
+      </div>
+      <div class="card" style="text-align:center;padding:var(--space-2xl)">
+        <div style="font-size:3rem;margin-bottom:var(--space-lg)">📱</div>
+        <h3>2. Contact</h3>
+        <p class="text-muted mt-sm">Tap "Chat on WhatsApp" to speak directly with the caretaker. No middlemen. No fees.</p>
+      </div>
+      <div class="card" style="text-align:center;padding:var(--space-2xl)">
+        <div style="font-size:3rem;margin-bottom:var(--space-lg)">🏠</div>
+        <h3>3. Move In</h3>
+        <p class="text-muted mt-sm">View the house in person and move in. Leave a review to help other tenants.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ LATEST LISTINGS ═══════════════════════════════ -->
+<section class="section section--alt">
+  <div class="container">
+    <div class="flex-between mb-xl">
+      <div class="section-header" style="margin-bottom:0">
+        <div class="section-header__label">🆕 Just Listed</div>
+        <h2 class="section-header__title">Newest Vacancies</h2>
+      </div>
+      <a href="listings.html" class="btn btn--outline">Browse All →</a>
+    </div>
+    <div class="grid-3" id="latest-grid">
+      <div class="skeleton" style="height:320px;border-radius:16px"></div>
+      <div class="skeleton" style="height:320px;border-radius:16px"></div>
+      <div class="skeleton" style="height:320px;border-radius:16px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TRUST SECTION ════════════════════════════════ -->
+<section class="section" style="background: linear-gradient(135deg, var(--green-900), var(--green-700))">
+  <div class="container">
+    <div style="text-align:center; color:white; margin-bottom:var(--space-2xl)">
+      <div style="font-size:0.8rem;font-weight:700;letter-spacing:0.1em;color:var(--gold-400);margin-bottom:var(--space-sm)">🛡️ OUR PROMISE</div>
+      <h2 style="color:white">Trust is Our Biggest Feature</h2>
+      <p style="color:rgba(255,255,255,0.7);margin-top:var(--space-sm)">We fight fake listings so you don't have to.</p>
+    </div>
+    <div class="grid-4">
+      <div style="text-align:center;color:white">
+        <div style="font-size:2.5rem;margin-bottom:var(--space-md)">✅</div>
+        <h4 style="margin-bottom:var(--space-sm)">Physical Verification</h4>
+        <p style="color:rgba(255,255,255,0.65);font-size:0.85rem">Every listing is confirmed by our admin team before going live.</p>
+      </div>
+      <div style="text-align:center;color:white">
+        <div style="font-size:2.5rem;margin-bottom:var(--space-md)">📸</div>
+        <h4 style="margin-bottom:var(--space-sm)">Real Photos & Video</h4>
+        <p style="color:rgba(255,255,255,0.65);font-size:0.85rem">Actual photos of the house, taken by the caretaker or our team.</p>
+      </div>
+      <div style="text-align:center;color:white">
+        <div style="font-size:2.5rem;margin-bottom:var(--space-md)">🔴</div>
+        <h4 style="margin-bottom:var(--space-sm)">Real-time Vacancy</h4>
+        <p style="color:rgba(255,255,255,0.65);font-size:0.85rem">Caretakers update status when rented. No stale listings.</p>
+      </div>
+      <div style="text-align:center;color:white">
+        <div style="font-size:2.5rem;margin-bottom:var(--space-md)">🚨</div>
+        <h4 style="margin-bottom:var(--space-sm)">Report Scams</h4>
+        <p style="color:rgba(255,255,255,0.65);font-size:0.85rem">Any user can flag a fake listing. Admin reviews within 24 hours.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ LIST YOUR PROPERTY CTA ════════════════════════ -->
+<section class="section section--alt">
+  <div class="container" style="text-align:center">
+    <div style="max-width:600px;margin:0 auto">
+      <div class="section-header__label" style="display:inline-flex;margin-bottom:var(--space-md)">🏢 For Landlords & Caretakers</div>
+      <h2 style="margin-bottom:var(--space-md)">Fill Your Vacancy Fast</h2>
+      <p class="text-muted" style="margin-bottom:var(--space-xl)">List your property for free. Get tenant inquiries directly on WhatsApp. No commissions, no middlemen.</p>
+      <a href="dashboard.html" class="btn btn--primary btn--lg">List My Property Free →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ════════════════════════════════════════ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer__grid">
+      <div class="footer__brand">
+        <a href="index.html" class="navbar__logo" style="margin-bottom:var(--space-md)">
+          <div class="navbar__logo-icon">🏠</div> Nyumba<span>Find</span>
+        </a>
+        <p>Kenya's most trusted rental marketplace. Real houses. Real caretakers. Real fast.</p>
+        <p style="margin-top:var(--space-sm);font-size:0.8rem;opacity:0.5">Built in Kenya 🇰🇪 for Kenyans.</p>
+      </div>
+      <div class="footer__col">
+        <h4>For Tenants</h4>
+        <ul class="footer__links">
+          <li><a href="listings.html">Browse Listings</a></li>
+          <li><a href="listings.html?sort=price_asc">Cheapest First</a></li>
+          <li><a href="listings.html?type=bedsitter">Bedsitters</a></li>
+          <li><a href="listings.html?type=1br">1 Bedrooms</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h4>For Landlords</h4>
+        <ul class="footer__links">
+          <li><a href="dashboard.html">Upload Listing</a></li>
+          <li><a href="dashboard.html">Manage Vacancies</a></li>
+          <li><a href="auth.html">Register</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h4>Company</h4>
+        <ul class="footer__links">
+          <li><a href="#how-it-works">How it Works</a></li>
+          <li><a href="#trust">Trust & Safety</a></li>
+          <li><a href="admin.html">Admin Portal</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <p>© 2024 NyumbaFind. All rights reserved.</p>
+      <p>🇰🇪 Nairobi, Kenya</p>
+    </div>
+  </div>
+</footer>
+
+<script src="js/api.js"></script>
+<script>
+  (async function() {
+    // ─── Navbar auth state ───────────────────────
+    const navArea = document.getElementById('nav-auth-area');
+    if (api.isLoggedIn()) {
+      const user = api.getUser();
+      navArea.innerHTML = `
+        <div class="flex gap-md">
+          <a href="dashboard.html" class="btn btn--secondary btn--sm">My Dashboard</a>
+          <button onclick="handleLogout()" class="btn btn--ghost btn--sm">Logout</button>
+        </div>`;
+    }
+
+    // ─── Search & Autocomplete ──────────────────
+    const searchBtn    = document.getElementById('search-btn');
+    const searchInput  = document.getElementById('search-input');
+    const estateFilter = document.getElementById('search-estate-filter');
+    const typeFilter   = document.getElementById('search-type-filter');
+
+    let selectedLocation = null;
+
+    if (window.locations) {
+      locations.setupAutocomplete(searchInput, (loc) => {
+        selectedLocation = loc;
+      });
+    }
+
+    function doSearch() {
+      const params = new URLSearchParams();
+      const val = searchInput.value.trim();
+
+      if (selectedLocation && val === selectedLocation.value) {
+        if (selectedLocation.type === 'county') {
+          params.set('county', selectedLocation.county);
+        } else if (selectedLocation.type === 'sub_county') {
+          params.set('sub_county', selectedLocation.sub_county);
+        } else if (selectedLocation.type === 'ward') {
+          params.set('q', selectedLocation.ward);
+        } else if (selectedLocation.type === 'estate') {
+          params.set('estate', selectedLocation.slug);
+        } else if (selectedLocation.type === 'village') {
+          params.set('q', selectedLocation.value);
+        }
+      } else if (val) {
+        params.set('q', val);
+      }
+
+      if (estateFilter.value)        params.set('estate', estateFilter.value);
+      if (typeFilter.value)          params.set('type', typeFilter.value);
+      window.location.href = `listings.html?${params}`;
+    }
+    searchBtn.addEventListener('click', doSearch);
+    searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+    // ─── Load Estates ────────────────────────────
+    try {
+      const estates = await api.estates.list();
+      const estateEmojis = ['🏘️','🌇','🏙️','🌆','🏗️','🌳','🏡','🌴','🏢','🌉'];
+
+      // Populate search dropdown
+      estates.forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.slug; opt.textContent = e.name;
+        estateFilter.appendChild(opt);
+      });
+
+      // Render estate cards
+      document.getElementById('stat-estates').textContent = estates.length + '+';
+      document.getElementById('estates-grid').innerHTML = estates.map((estate, i) => `
+        <div class="estate-card" onclick="window.location='listings.html?estate=${estate.slug}'">
+          <div class="estate-card__content">
+            <div class="estate-card__emoji">${estateEmojis[i % estateEmojis.length]}</div>
+            <div class="estate-card__name">${estate.name}</div>
+            <div class="estate-card__count">${estate.listing_count || 0} listings</div>
+          </div>
+        </div>`).join('');
+    } catch(e) {
+      document.getElementById('estates-grid').innerHTML = `<div class="alert alert--error">Could not load estates.</div>`;
+    }
+
+    // ─── Load Featured Listings ──────────────────
+    try {
+      const data = await api.listings.list({ sort: 'popular', per_page: 6 });
+      const listings = (data.data || data).filter(l => l.is_featured).slice(0, 3);
+      const all      = (data.data || data).slice(0, 3);
+
+      const featured = listings.length > 0 ? listings : all;
+      document.getElementById('stat-listings').textContent = data.total || (data.data?.length || '—') + '+';
+      document.getElementById('featured-grid').innerHTML = featured.length
+        ? featured.map(l => UI.renderListingCard(l)).join('')
+        : '<p class="text-muted" style="grid-column:1/-1;text-align:center">No featured listings yet.</p>';
+    } catch(e) {
+      document.getElementById('featured-grid').innerHTML = `<p class="text-muted" style="grid-column:1/-1;text-align:center">Could not load listings.</p>`;
+    }
+
+    // ─── Load Latest Listings ────────────────────
+    try {
+      const data = await api.listings.list({ sort: 'newest', per_page: 6 });
+      const listings = (data.data || data).slice(0, 6);
+      document.getElementById('latest-grid').innerHTML = listings.length
+        ? listings.map(l => UI.renderListingCard(l)).join('')
+        : '<p class="text-muted" style="grid-column:1/-1;text-align:center">No listings yet.</p>';
+    } catch(e) { /* silent */ }
+  })();
+
+  async function handleLogout() {
+    try { await api.auth.logout(); } catch(e) {}
+    api.clearSession();
+    window.location.reload();
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login / Sign Up — NyumbaFind</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { background: linear-gradient(135deg, var(--green-900) 0%, var(--green-700) 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: var(--space-lg); }
+    .auth-card { background: white; border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); max-width: 440px; width: 100%; overflow: hidden; }
+    .auth-header { background: linear-gradient(135deg, var(--green-800), var(--green-900)); padding: var(--space-2xl); text-align: center; color: white; }
+    .auth-logo { font-family: var(--font-heading); font-size: 1.8rem; font-weight: 800; margin-bottom: var(--space-sm); }
+    .auth-logo span { color: var(--gold-400); }
+    .auth-body { padding: var(--space-xl); }
+    .step { display: none; }
+    .step.active { display: block; animation: fadeIn 0.3s ease; }
+    .otp-inputs { display: flex; gap: var(--space-sm); justify-content: center; }
+    .otp-input {
+      width: 52px; height: 60px; text-align: center;
+      border: 2px solid var(--border); border-radius: var(--radius-md);
+      font-size: 1.5rem; font-weight: 700; font-family: var(--font-heading);
+      transition: var(--transition);
+    }
+    .otp-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,107,64,0.12); }
+    .phone-display { font-size: 1.1rem; font-weight: 700; color: var(--primary); }
+    .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); }
+    .role-btn {
+      padding: var(--space-md); border-radius: var(--radius-md);
+      border: 2px solid var(--border); background: white; cursor: pointer;
+      text-align: center; transition: var(--transition);
+    }
+    .role-btn:hover, .role-btn.selected { border-color: var(--primary); background: var(--green-50); }
+    .role-btn .icon { font-size: 1.5rem; display: block; margin-bottom: 4px; }
+    .role-btn .label { font-size: 0.8rem; font-weight: 600; }
+    .timer { font-size: 0.85rem; color: var(--text-muted); }
+    .timer span { color: var(--primary); font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<div class="auth-card">
+  <!-- Header -->
+  <div class="auth-header">
+    <a href="index.html" class="auth-logo">🏠 Nyumba<span>Find</span></a>
+    <p style="color:rgba(255,255,255,0.75);margin-top:var(--space-sm);font-size:0.9rem">Kenya's Trusted Rental Platform</p>
+  </div>
+
+  <div class="auth-body">
+
+    <!-- ─── Step 1: Phone Number ─────────────── -->
+    <div class="step active" id="step-phone">
+      <h2 style="text-align:center;margin-bottom:var(--space-sm)">Welcome Back</h2>
+      <p class="text-muted text-sm" style="text-align:center;margin-bottom:var(--space-xl)">Enter your phone number to continue. We'll send you a 6-digit OTP.</p>
+      <div class="form-group mb-lg">
+        <label class="form-label">Phone Number</label>
+        <div style="display:flex;gap:var(--space-sm);align-items:center">
+          <div style="padding:12px 16px;background:var(--gray-100);border-radius:var(--radius-md);font-weight:600;color:var(--gray-700);white-space:nowrap;border:1.5px solid var(--border)">🇰🇪 +254</div>
+          <input type="tel" id="phone-input" class="form-input" placeholder="7XX XXX XXX" maxlength="10" autocomplete="tel" style="flex:1">
+        </div>
+        <div class="form-hint">Enter your Kenyan phone number (e.g., 0712 345 678)</div>
+      </div>
+      <div id="phone-error" class="alert alert--error hidden"></div>
+      <button id="send-otp-btn" class="btn btn--primary btn--block btn--lg">Get OTP →</button>
+      <p class="text-sm text-muted" style="text-align:center;margin-top:var(--space-lg)">
+        By continuing you agree to our Terms of Service.
+      </p>
+    </div>
+
+    <!-- ─── Step 2: OTP Verification ─────────── -->
+    <div class="step" id="step-otp">
+      <div style="text-align:center;margin-bottom:var(--space-xl)">
+        <div style="font-size:3rem;margin-bottom:var(--space-sm)">📱</div>
+        <h2 style="margin-bottom:var(--space-sm)">Check your SMS</h2>
+        <p class="text-muted text-sm">We sent a 6-digit code to</p>
+        <div class="phone-display mt-sm" id="otp-phone-display">—</div>
+      </div>
+      <div class="form-group mb-lg">
+        <label class="form-label" style="text-align:center;display:block">Enter OTP Code</label>
+        <div class="otp-inputs" id="otp-inputs">
+          <input type="text" class="otp-input" maxlength="1" inputmode="numeric" id="otp-0">
+          <input type="text" class="otp-input" maxlength="1" inputmode="numeric" id="otp-1">
+          <input type="text" class="otp-input" maxlength="1" inputmode="numeric" id="otp-2">
+          <input type="text" class="otp-input" maxlength="1" inputmode="numeric" id="otp-3">
+          <input type="text" class="otp-input" maxlength="1" inputmode="numeric" id="otp-4">
+          <input type="text" class="otp-input" maxlength="1" inputmode="numeric" id="otp-5">
+        </div>
+      </div>
+      <div id="otp-error" class="alert alert--error hidden"></div>
+      <button id="verify-otp-btn" class="btn btn--primary btn--block btn--lg" style="margin-bottom:var(--space-md)">Verify Code →</button>
+      <div style="text-align:center" class="timer">
+        Didn't receive it? <a href="#" id="resend-btn" style="color:var(--primary);font-weight:700" class="hidden">Resend OTP</a>
+        <span id="timer-display">Resend in <span id="timer-count">60</span>s</span>
+      </div>
+      <div style="text-align:center;margin-top:var(--space-md)">
+        <button onclick="goBack()" class="btn btn--ghost btn--sm">← Change Number</button>
+      </div>
+    </div>
+
+    <!-- ─── Step 3: Name & Role (new users) ───── -->
+    <div class="step" id="step-profile">
+      <div style="text-align:center;margin-bottom:var(--space-xl)">
+        <div style="font-size:3rem;margin-bottom:var(--space-sm)">🎉</div>
+        <h2 style="margin-bottom:var(--space-sm)">Welcome to NyumbaFind!</h2>
+        <p class="text-muted text-sm">Just a few details to set up your account.</p>
+      </div>
+      <div class="form-group mb-lg">
+        <label class="form-label">Your Full Name</label>
+        <input type="text" id="name-input" class="form-input" placeholder="e.g. John Kamau">
+      </div>
+      <div class="form-group mb-xl">
+        <label class="form-label">I am a...</label>
+        <div class="role-grid">
+          <button class="role-btn selected" data-role="tenant" onclick="selectRole('tenant', event)">
+            <span class="icon">🔍</span>
+            <span class="label">Tenant</span>
+            <span class="text-xs text-muted">Looking for a house</span>
+          </button>
+          <button class="role-btn" data-role="landlord" onclick="selectRole('landlord', event)">
+            <span class="icon">🏠</span>
+            <span class="label">Landlord</span>
+            <span class="text-xs text-muted">I own property</span>
+          </button>
+          <button class="role-btn" data-role="caretaker" onclick="selectRole('caretaker', event)">
+            <span class="icon">🔑</span>
+            <span class="label">Caretaker</span>
+            <span class="text-xs text-muted">I manage a property</span>
+          </button>
+          <button class="role-btn" data-role="agent" onclick="selectRole('agent', event)">
+            <span class="icon">💼</span>
+            <span class="label">Agent</span>
+            <span class="text-xs text-muted">I list multiple properties</span>
+          </button>
+        </div>
+      </div>
+      <div id="profile-error" class="alert alert--error hidden"></div>
+      <button id="complete-btn" class="btn btn--primary btn--block btn--lg">Complete Setup →</button>
+    </div>
+
+    <!-- ─── Step 4: Success ───────────────────── -->
+    <div class="step" id="step-success">
+      <div style="text-align:center;padding:var(--space-xl) 0">
+        <div style="font-size:4rem;margin-bottom:var(--space-md)">✅</div>
+        <h2 style="margin-bottom:var(--space-sm)">You're in!</h2>
+        <p class="text-muted" id="success-message">Redirecting you...</p>
+      </div>
+    </div>
+
+  </div><!-- /.auth-body -->
+</div><!-- /.auth-card -->
+
+<script src="js/api.js"></script>
+<script>
+  let phone        = '';
+  let pendingCode  = '';
+  let selectedRole = 'tenant';
+  let timerInterval;
+
+  // ─── OTP input magic ─────────────────────────
+  const otpInputs = document.querySelectorAll('.otp-input');
+  otpInputs.forEach((input, i) => {
+    input.addEventListener('input', e => {
+      const val = e.target.value.replace(/\D/g, '');
+      e.target.value = val;
+      if (val && i < 5) otpInputs[i + 1].focus();
+      if (getOtp().length === 6) autoVerify();
+    });
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Backspace' && !input.value && i > 0) {
+        otpInputs[i - 1].focus();
+        otpInputs[i - 1].value = '';
+      }
+    });
+    input.addEventListener('paste', e => {
+      e.preventDefault();
+      const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+      paste.split('').forEach((ch, idx) => { if (otpInputs[idx]) otpInputs[idx].value = ch; });
+      if (paste.length === 6) autoVerify();
+    });
+  });
+
+  function getOtp() { return [...otpInputs].map(i => i.value).join(''); }
+
+  function showStep(name) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.getElementById(`step-${name}`).classList.add('active');
+  }
+
+  function showError(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg; el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 4000);
+  }
+
+  function startTimer(seconds = 60) {
+    let count = seconds;
+    document.getElementById('timer-count').textContent = count;
+    document.getElementById('timer-display').classList.remove('hidden');
+    document.getElementById('resend-btn').classList.add('hidden');
+
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      count--;
+      document.getElementById('timer-count').textContent = count;
+      if (count <= 0) {
+        clearInterval(timerInterval);
+        document.getElementById('timer-display').classList.add('hidden');
+        document.getElementById('resend-btn').classList.remove('hidden');
+      }
+    }, 1000);
+  }
+
+  // ─── Step 1: Send OTP ────────────────────────
+  document.getElementById('send-otp-btn').addEventListener('click', sendOtp);
+  document.getElementById('phone-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendOtp(); });
+
+  async function sendOtp() {
+    const raw = document.getElementById('phone-input').value.replace(/\s/g, '');
+    if (!raw || raw.length < 9) { showError('phone-error', 'Please enter a valid phone number.'); return; }
+
+    const btn = document.getElementById('send-otp-btn');
+    UI.setLoading(btn, true);
+    try {
+      const result = await api.auth.sendOtp(raw.startsWith('0') ? raw : '0' + raw);
+      phone = result.phone;
+      document.getElementById('otp-phone-display').textContent = phone;
+      showStep('otp');
+      otpInputs[0].focus();
+      startTimer(60);
+    } catch(e) { showError('phone-error', e.message); }
+    finally { UI.setLoading(btn, false); }
+  }
+
+  // ─── Step 2: Verify OTP ──────────────────────
+  document.getElementById('verify-otp-btn').addEventListener('click', verifyOtp);
+  document.getElementById('resend-btn').addEventListener('click', async (e) => {
+    e.preventDefault();
+    try { await api.auth.sendOtp(phone.replace('+', '0').replace('254', '0')); startTimer(60); UI.toast('OTP resent!', 'success'); } catch(e) {}
+  });
+
+  async function autoVerify() { await new Promise(r => setTimeout(r, 300)); await verifyOtp(); }
+
+  async function verifyOtp() {
+    const code = getOtp();
+    if (code.length !== 6) { showError('otp-error', 'Please enter all 6 digits.'); return; }
+    const btn = document.getElementById('verify-otp-btn');
+    UI.setLoading(btn, true);
+    try {
+      const result = await api.auth.verifyOtp(phone, code);
+      if (result.requires_name) {
+        pendingCode = code;
+        showStep('profile');
+      } else {
+        api.saveSession(result.token, result.user);
+        finishLogin(result.user);
+      }
+    } catch(e) {
+      showError('otp-error', e.message);
+      otpInputs.forEach(i => i.value = '');
+      otpInputs[0].focus();
+    }
+    finally { UI.setLoading(btn, false); }
+  }
+
+  // ─── Step 3: Complete profile ────────────────
+  function selectRole(role, e) {
+    selectedRole = role;
+    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
+    e.currentTarget.classList.add('selected');
+  }
+
+  document.getElementById('complete-btn').addEventListener('click', async () => {
+    const name = document.getElementById('name-input').value.trim();
+    if (!name) { showError('profile-error', 'Please enter your name.'); return; }
+    const btn = document.getElementById('complete-btn');
+    UI.setLoading(btn, true);
+    try {
+      const code = pendingCode || getOtp();
+      const result = await api.auth.verifyOtp(phone, code, name);
+      api.saveSession(result.token, result.user);
+      // Update role
+      try { await api.auth.updateProfile({ role: selectedRole }); } catch(e) {}
+      const updatedUser = await api.auth.me();
+      api.saveSession(result.token, updatedUser);
+      finishLogin(updatedUser);
+    } catch(e) { showError('profile-error', e.message); }
+    finally { UI.setLoading(btn, false); }
+  });
+
+  function finishLogin(user) {
+    clearInterval(timerInterval);
+    showStep('success');
+    document.getElementById('success-message').textContent = `Welcome, ${user.name}! Redirecting...`;
+    setTimeout(() => {
+      const redirect = sessionStorage.getItem('redirect_after_login');
+      sessionStorage.removeItem('redirect_after_login');
+      if (redirect) window.location.href = redirect;
+      else if (user.role === 'admin') window.location.href = 'admin.html';
+      else window.location.href = 'index.html';
+    }, 1500);
+  }
+
+  function goBack() { showStep('phone'); clearInterval(timerInterval); }
+
+  // Redirect if already logged in
+  if (api.isLoggedIn()) {
+    const user = api.getUser();
+    if (user?.role === 'admin') window.location.href = 'admin.html';
+    else window.location.href = 'index.html';
+  }
+</script>
+</body>
+</html>

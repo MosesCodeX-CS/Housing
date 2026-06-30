@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Landlord Dashboard — NyumbaFind</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .upload-zone { border: 2px dashed var(--border); border-radius: var(--radius-lg); padding: var(--space-2xl); text-align: center; cursor: pointer; transition: var(--transition); background: var(--gray-50); }
+    .upload-zone:hover, .upload-zone.drag-over { border-color: var(--primary); background: var(--green-50); }
+    .upload-zone input { display: none; }
+    .photo-previews { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: var(--space-sm); margin-top: var(--space-md); }
+    .photo-preview { position: relative; height: 100px; border-radius: var(--radius-sm); overflow: hidden; }
+    .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .photo-preview__remove { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,0.7); color: white; border: none; cursor: pointer; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; }
+    .amenity-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-sm); }
+    .amenity-toggle { display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-sm); border-radius: var(--radius-md); border: 1.5px solid var(--border); cursor: pointer; transition: var(--transition); font-size: 0.85rem; }
+    .amenity-toggle input { accent-color: var(--primary); }
+    .amenity-toggle:has(input:checked) { border-color: var(--primary); background: var(--green-50); color: var(--primary); font-weight: 600; }
+    .status-toggle { display: inline-flex; align-items: center; gap: var(--space-sm); padding: 8px 20px; border-radius: var(--radius-full); font-weight: 700; font-size: 0.85rem; cursor: pointer; border: none; transition: var(--transition); }
+    .status-toggle.vacant   { background: var(--green-100); color: var(--green-700); }
+    .status-toggle.occupied { background: var(--red-100); color: var(--danger); }
+    .my-listing-item { display: flex; gap: var(--space-md); align-items: center; padding: var(--space-md); border-bottom: 1px solid var(--border); transition: var(--transition); }
+    .my-listing-item:hover { background: var(--gray-50); }
+    .my-listing-thumb { width: 80px; height: 70px; border-radius: var(--radius-md); overflow: hidden; flex-shrink: 0; background: var(--gray-100); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+    .my-listing-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .my-listing-info { flex: 1; min-width: 0; }
+    .my-listing-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  </style>
+</head>
+<body>
+<div class="dash-layout">
+
+  <!-- ═══ SIDEBAR ════════════════════════════════ -->
+  <aside class="dash-sidebar">
+    <div class="dash-sidebar__logo">
+      <a href="index.html" class="navbar__logo"><div class="navbar__logo-icon">🏠</div> Nyumba<span>Find</span></a>
+    </div>
+    <ul class="dash-nav">
+      <li class="dash-nav__item"><a href="#" class="active" data-panel="overview" onclick="showPanel('overview', event)"><span class="dash-nav__icon">📊</span> Overview</a></li>
+      <li class="dash-nav__item"><a href="#" data-panel="my-listings" onclick="showPanel('my-listings', event)"><span class="dash-nav__icon">🏠</span> My Listings</a></li>
+      <li class="dash-nav__item"><a href="#" data-panel="add-listing" onclick="showPanel('add-listing', event)"><span class="dash-nav__icon">➕</span> Add Listing</a></li>
+      <li class="dash-nav__item"><a href="#" data-panel="inquiries" onclick="showPanel('inquiries', event)"><span class="dash-nav__icon">📩</span> Inquiries</a></li>
+      <li class="dash-nav__item"><a href="#" data-panel="profile" onclick="showPanel('profile', event)"><span class="dash-nav__icon">👤</span> Profile</a></li>
+    </ul>
+    <div style="margin-top:auto;padding-top:var(--space-xl);border-top:1px solid rgba(255,255,255,0.1);margin-top:var(--space-2xl)">
+      <div style="color:rgba(255,255,255,0.6);font-size:0.8rem;margin-bottom:var(--space-sm)">Logged in as</div>
+      <div style="color:white;font-weight:600" id="sidebar-user-name">...</div>
+      <div style="color:rgba(255,255,255,0.5);font-size:0.8rem" id="sidebar-user-role">—</div>
+      <button onclick="handleLogout()" style="margin-top:var(--space-md);background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);border:none;padding:8px 16px;border-radius:var(--radius-md);cursor:pointer;font-size:0.85rem;width:100%;transition:var(--transition)" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">Sign Out</button>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ════════════════════════════════════ -->
+  <main class="dash-main">
+
+    <!-- ─── Overview Panel ──────────────────── -->
+    <div id="panel-overview" class="panel active">
+      <div class="dash-header">
+        <h1 class="dash-header__title">Welcome back, <span id="header-name">—</span> 👋</h1>
+        <p class="dash-header__sub">Here's a summary of your listings activity.</p>
+      </div>
+      <div class="grid-4 mb-xl" id="overview-stats">
+        <div class="stat-card"><div class="stat-card__number" id="stat-total">—</div><div class="stat-card__label">Total Listings</div></div>
+        <div class="stat-card" style="border-color:var(--green-400)"><div class="stat-card__number" id="stat-active" style="color:var(--green-400)">—</div><div class="stat-card__label">Vacant Now</div></div>
+        <div class="stat-card" style="border-color:var(--danger)"><div class="stat-card__number" id="stat-occupied" style="color:var(--danger)">—</div><div class="stat-card__label">Occupied</div></div>
+        <div class="stat-card" style="border-color:var(--gold-400)"><div class="stat-card__number" id="stat-pending" style="color:var(--gold-400)">—</div><div class="stat-card__label">Pending Review</div></div>
+      </div>
+      <div class="card">
+        <div class="card__body">
+          <h3 class="mb-md">Quick Actions</h3>
+          <div style="display:flex;flex-wrap:wrap;gap:var(--space-md)">
+            <button onclick="showPanel('add-listing')" class="btn btn--primary"><span>➕</span> Add New Listing</button>
+            <button onclick="showPanel('my-listings')" class="btn btn--outline">📋 View All My Listings</button>
+            <a href="listings.html" class="btn btn--ghost">🔍 Browse Market</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── My Listings Panel ──────────────── -->
+    <div id="panel-my-listings" class="panel hidden">
+      <div class="dash-header">
+        <h1 class="dash-header__title">My Listings</h1>
+        <p class="dash-header__sub">Manage your properties and vacancy status.</p>
+      </div>
+      <div class="card">
+        <div id="my-listings-content" style="min-height:200px">
+          <div style="padding:var(--space-xl);text-align:center"><div class="skeleton" style="height:80px;margin-bottom:var(--space-md)"></div><div class="skeleton" style="height:80px"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Add Listing Panel ──────────────── -->
+    <div id="panel-add-listing" class="panel hidden">
+      <div class="dash-header">
+        <h1 class="dash-header__title">Add New Listing</h1>
+        <p class="dash-header__sub">Fill in the details below. Your listing will be reviewed by our team before going live.</p>
+      </div>
+      <div class="alert alert--info mb-lg">
+        <strong>📸 Pro Tip:</strong> Listings with clear photos get 3× more inquiries. Upload at least 3 good quality photos.
+      </div>
+
+      <form id="listing-form" novalidate>
+        <!-- Basic Info -->
+        <div class="card mb-lg">
+          <div class="card__body">
+            <h3 class="mb-lg">Basic Information</h3>
+            <div class="grid-2 gap-lg">
+              <div class="form-group">
+                <label class="form-label">Estate / Area *</label>
+                <select class="form-select" id="f-estate" required>
+                  <option value="">Select estate...</option>
+                  <option value="custom">➕ Add New Area / Neighborhood...</option>
+                </select>
+              </div>
+
+              <!-- Custom Location Builder -->
+              <div id="custom-location-fields" class="hidden" style="grid-column: 1 / -1; background: var(--gray-50); padding: var(--space-md); border-radius: var(--radius-md); border: 1.5px solid var(--border); margin-top: var(--space-sm)">
+                <div class="alert alert--info mb-md" style="font-size:0.8rem; margin-bottom: var(--space-sm)">
+                  Specify the location details to automatically register this new area.
+                </div>
+                <div class="grid-3 gap-sm">
+                  <div class="form-group">
+                    <label class="form-label">County *</label>
+                    <select class="form-select" id="custom-county">
+                      <option value="">Select County...</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Sub-County *</label>
+                    <select class="form-select" id="custom-subcounty">
+                      <option value="">Select Sub-County...</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Ward / Area *</label>
+                    <select class="form-select" id="custom-ward">
+                      <option value="">Select Ward...</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group mt-md" style="margin-top: var(--space-md)">
+                  <label class="form-label">New Estate or Neighborhood Name *</label>
+                  <input type="text" class="form-input" id="custom-estate-name" placeholder="e.g. Milimani Phase 3, TRM Stage, Sunrise Apts">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">House Type *</label>
+                <select class="form-select" id="f-type" required>
+                  <option value="">Select type...</option>
+                  <option value="single_room">Single Room</option>
+                  <option value="bedsitter">Bedsitter</option>
+                  <option value="studio">Studio</option>
+                  <option value="1br">1 Bedroom</option>
+                  <option value="2br">2 Bedroom</option>
+                  <option value="3br">3 Bedroom</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group mt-md">
+              <label class="form-label">Listing Title *</label>
+              <input type="text" class="form-input" id="f-title" placeholder="e.g. Spacious bedsitter near Rongai stage" maxlength="150" required>
+              <div class="form-hint">Be specific — mention key location or features</div>
+            </div>
+            <div class="form-group mt-md">
+              <label class="form-label">Description</label>
+              <textarea class="form-input" id="f-description" rows="4" placeholder="Describe the house: layout, special features, nearby landmarks, transport links..."></textarea>
+            </div>
+            <div class="form-group mt-md">
+              <label class="form-label">Street / Building Name</label>
+              <input type="text" class="form-input" id="f-street" placeholder="e.g. Milimani Estate, Phase 2">
+            </div>
+          </div>
+        </div>
+
+        <!-- Pricing -->
+        <div class="card mb-lg">
+          <div class="card__body">
+            <h3 class="mb-lg">Pricing (KSh)</h3>
+            <div class="grid-2 gap-lg">
+              <div class="form-group">
+                <label class="form-label">Monthly Rent *</label>
+                <input type="number" class="form-input" id="f-price" placeholder="e.g. 8500" min="500" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Deposit</label>
+                <input type="number" class="form-input" id="f-deposit" placeholder="e.g. 8500" min="0">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Caretaker -->
+        <div class="card mb-lg">
+          <div class="card__body">
+            <h3 class="mb-lg">Caretaker Contact</h3>
+            <div class="grid-2 gap-lg">
+              <div class="form-group">
+                <label class="form-label">Caretaker Name</label>
+                <input type="text" class="form-input" id="f-caretaker-name" placeholder="e.g. James Mwangi">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Phone Number *</label>
+                <input type="tel" class="form-input" id="f-caretaker-phone" placeholder="e.g. 0712 345 678" required>
+                <div class="form-hint">Tenants will call this number</div>
+              </div>
+            </div>
+            <div class="form-group mt-md">
+              <label class="form-label">WhatsApp Number (if different)</label>
+              <input type="tel" class="form-input" id="f-caretaker-whatsapp" placeholder="Leave blank if same as phone">
+            </div>
+          </div>
+        </div>
+
+        <!-- Amenities -->
+        <div class="card mb-lg">
+          <div class="card__body">
+            <h3 class="mb-lg">Amenities</h3>
+            <div class="amenity-grid">
+              <label class="amenity-toggle"><input type="checkbox" value="water"> 💧 Running Water</label>
+              <label class="amenity-toggle"><input type="checkbox" value="electricity"> ⚡ Electricity</label>
+              <label class="amenity-toggle"><input type="checkbox" value="wifi"> 📶 WiFi</label>
+              <label class="amenity-toggle"><input type="checkbox" value="parking"> 🅿️ Parking</label>
+              <label class="amenity-toggle"><input type="checkbox" value="security"> 🛡️ Security</label>
+              <label class="amenity-toggle"><input type="checkbox" value="borehole"> 🌊 Borehole</label>
+              <label class="amenity-toggle"><input type="checkbox" value="cctv"> 📷 CCTV</label>
+              <label class="amenity-toggle"><input type="checkbox" value="gym"> 🏋️ Gym</label>
+              <label class="amenity-toggle"><input type="checkbox" value="pool"> 🏊 Swimming Pool</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Photos -->
+        <div class="card mb-lg">
+          <div class="card__body">
+            <h3 class="mb-lg">Photos *</h3>
+            <div class="upload-zone" id="photo-zone" onclick="document.getElementById('photo-input').click()">
+              <input type="file" id="photo-input" accept="image/*" multiple>
+              <div style="font-size:2rem;margin-bottom:var(--space-sm)">📸</div>
+              <p class="font-semi">Click to upload photos</p>
+              <p class="text-sm text-muted mt-sm">or drag and drop here. Max 5MB per photo. Min 1, max 10 photos.</p>
+            </div>
+            <div class="photo-previews" id="photo-previews"></div>
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <div id="form-error" class="alert alert--error hidden"></div>
+        <div style="display:flex;gap:var(--space-md)">
+          <button type="submit" id="submit-listing-btn" class="btn btn--primary btn--lg">🚀 Submit for Review</button>
+          <button type="button" onclick="showPanel('my-listings')" class="btn btn--ghost btn--lg">Cancel</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- ─── Inquiries Panel ─────────────────── -->
+    <div id="panel-inquiries" class="panel hidden">
+      <div class="dash-header">
+        <h1 class="dash-header__title">My Inquiries</h1>
+        <p class="dash-header__sub">Houses you've inquired about as a tenant.</p>
+      </div>
+      <div id="inquiries-content" class="card">
+        <div style="padding:var(--space-xl);text-align:center"><div class="skeleton" style="height:80px"></div></div>
+      </div>
+    </div>
+
+    <!-- ─── Profile Panel ───────────────────── -->
+    <div id="panel-profile" class="panel hidden">
+      <div class="dash-header">
+        <h1 class="dash-header__title">My Profile</h1>
+      </div>
+      <div class="card container--sm">
+        <div class="card__body">
+          <div class="form-group mb-md">
+            <label class="form-label">Full Name</label>
+            <input type="text" class="form-input" id="profile-name">
+          </div>
+          <div class="form-group mb-md">
+            <label class="form-label">Email (optional)</label>
+            <input type="email" class="form-input" id="profile-email" placeholder="your@email.com">
+          </div>
+          <div class="form-group mb-lg">
+            <label class="form-label">WhatsApp Number</label>
+            <input type="tel" class="form-input" id="profile-whatsapp" placeholder="e.g. 0712 345 678">
+          </div>
+          <button id="save-profile-btn" class="btn btn--primary">Save Changes</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  let photoFiles = [];
+
+  // ─── Auth Guard ───────────────────────────
+  if (!api.isLoggedIn()) window.location.href = 'auth.html';
+  const user = api.getUser();
+
+  // ─── Init ─────────────────────────────────
+  (async function() {
+    document.getElementById('header-name').textContent  = user?.name || '—';
+    document.getElementById('sidebar-user-name').textContent = user?.name || '—';
+    document.getElementById('sidebar-user-role').textContent = user?.role || '—';
+
+    await loadEstates();
+    await loadOverviewStats();
+  })();
+
+  async function loadEstates() {
+    try {
+      const estates = await api.estates.list();
+      const sel = document.getElementById('f-estate');
+      // Keep first option and "custom" option, clear the rest
+      sel.innerHTML = '<option value="">Select estate...</option><option value="custom">➕ Add New Area / Neighborhood...</option>';
+      estates.forEach(e => { const o = document.createElement('option'); o.value = e.id; o.textContent = e.name; sel.appendChild(o); });
+    } catch(e) {}
+  }
+
+  let kenyaLocations = [];
+
+  // Watch for custom estate option selection
+  document.getElementById('f-estate').addEventListener('change', async (e) => {
+    const customFields = document.getElementById('custom-location-fields');
+    if (e.target.value === 'custom') {
+      customFields.classList.remove('hidden');
+      await loadKenyaLocations();
+    } else {
+      customFields.classList.add('hidden');
+    }
+  });
+
+  async function loadKenyaLocations() {
+    if (kenyaLocations.length) return;
+    try {
+      const res = await fetch('js/kenya-locations.json');
+      kenyaLocations = await res.json();
+      
+      const countySel = document.getElementById('custom-county');
+      countySel.innerHTML = '<option value="">Select County...</option>' + 
+        kenyaLocations.map(c => `<option value="${c.county_name}">${c.county_name}</option>`).join('');
+
+      countySel.addEventListener('change', (e) => {
+        const countyName = e.target.value;
+        const subcountySel = document.getElementById('custom-subcounty');
+        const wardSel = document.getElementById('custom-ward');
+        
+        subcountySel.innerHTML = '<option value="">Select Sub-County...</option>';
+        wardSel.innerHTML = '<option value="">Select Ward...</option>';
+
+        if (!countyName) return;
+
+        const countyObj = kenyaLocations.find(c => c.county_name === countyName);
+        if (countyObj) {
+          subcountySel.innerHTML = '<option value="">Select Sub-County...</option>' +
+            countyObj.constituencies.map(sub => `<option value="${sub.constituency_name}">${sub.constituency_name}</option>`).join('');
+        }
+      });
+
+      document.getElementById('custom-subcounty').addEventListener('change', (e) => {
+        const subName = e.target.value;
+        const countyName = document.getElementById('custom-county').value;
+        const wardSel = document.getElementById('custom-ward');
+        
+        wardSel.innerHTML = '<option value="">Select Ward...</option>';
+
+        if (!subName || !countyName) return;
+
+        const countyObj = kenyaLocations.find(c => c.county_name === countyName);
+        if (countyObj) {
+          const subObj = countyObj.constituencies.find(sub => sub.constituency_name === subName);
+          if (subObj && subObj.wards) {
+            wardSel.innerHTML = '<option value="">Select Ward...</option>' +
+              subObj.wards.map(w => `<option value="${w}">${w}</option>`).join('');
+          }
+        }
+      });
+
+    } catch(e) {
+      console.error('Failed to load Kenya locations', e);
+    }
+  }
+
+  async function loadOverviewStats() {
+    try {
+      const data = await api.listings.myListings();
+      const listings = data.data || [];
+      document.getElementById('stat-total').textContent    = data.total || listings.length;
+      document.getElementById('stat-active').textContent   = listings.filter(l => l.status === 'active').length;
+      document.getElementById('stat-occupied').textContent = listings.filter(l => l.status === 'occupied').length;
+      document.getElementById('stat-pending').textContent  = listings.filter(l => l.status === 'pending').length;
+    } catch(e) {}
+  }
+
+  async function loadMyListings() {
+    const container = document.getElementById('my-listings-content');
+    try {
+      const data = await api.listings.myListings();
+      const listings = data.data || [];
+      if (!listings.length) {
+        container.innerHTML = `<div class="empty-state"><div class="empty-state__icon">🏠</div><div class="empty-state__title">No listings yet</div><p class="text-muted">Add your first property to get started.</p><button onclick="showPanel('add-listing')" class="btn btn--primary mt-md">Add Listing</button></div>`;
+        return;
+      }
+      container.innerHTML = listings.map(l => `
+        <div class="my-listing-item">
+          <div class="my-listing-thumb">
+            ${l.primary_photo ? `<img src="${l.primary_photo}" alt="${l.title}">` : '🏠'}
+          </div>
+          <div class="my-listing-info">
+            <div class="my-listing-title">${l.title}</div>
+            <div class="text-sm text-muted">${l.estate?.name || ''} · ${UI.formatPrice(l.price)}/mo</div>
+            <div style="margin-top:4px">
+              <span class="tag ${l.status === 'active' ? 'tag--green' : l.status === 'pending' ? 'tag--gold' : 'tag--red'}" style="font-size:0.7rem">
+                ${l.status === 'active' ? '🟢 Vacant' : l.status === 'pending' ? '⏳ Pending' : l.status === 'occupied' ? '🔴 Occupied' : l.status}
+              </span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:var(--space-sm);align-items:flex-end">
+            <a href="listing-detail.html?id=${l.id}" class="btn btn--ghost btn--sm">View</a>
+            ${l.status === 'active' ? `<button onclick="toggleStatus(${l.id}, 'occupied', this)" class="btn btn--sm" style="background:var(--red-100);color:var(--danger);border:none">Mark Occupied</button>` : ''}
+            ${l.status === 'occupied' ? `<button onclick="toggleStatus(${l.id}, 'active', this)" class="btn btn--sm btn--primary">Mark Vacant</button>` : ''}
+            <button onclick="deleteListing(${l.id}, this)" class="btn btn--sm" style="background:var(--gray-100);color:var(--gray-600);border:none">Delete</button>
+          </div>
+        </div>`).join('');
+    } catch(e) {
+      container.innerHTML = `<div class="alert alert--error">Failed to load listings: ${e.message}</div>`;
+    }
+  }
+
+  async function toggleStatus(id, newStatus, btn) {
+    UI.setLoading(btn, true);
+    try {
+      await api.listings.updateStatus(id, newStatus);
+      UI.toast(newStatus === 'active' ? '✅ Marked as Vacant' : '🔴 Marked as Occupied', 'success');
+      await loadMyListings();
+    } catch(e) { UI.toast(e.message, 'error'); }
+    finally { UI.setLoading(btn, false); }
+  }
+
+  async function deleteListing(id, btn) {
+    if (!confirm('Are you sure you want to delete this listing?')) return;
+    UI.setLoading(btn, true);
+    try {
+      await api.listings.destroy(id);
+      UI.toast('Listing deleted.', 'success');
+      await loadMyListings();
+    } catch(e) { UI.toast(e.message, 'error'); }
+    finally { UI.setLoading(btn, false); }
+  }
+
+  // ─── Photo Upload ─────────────────────────
+  const photoInput = document.getElementById('photo-input');
+  const photoZone  = document.getElementById('photo-zone');
+
+  photoInput.addEventListener('change', e => handleFiles(e.target.files));
+  photoZone.addEventListener('dragover', e => { e.preventDefault(); photoZone.classList.add('drag-over'); });
+  photoZone.addEventListener('dragleave', () => photoZone.classList.remove('drag-over'));
+  photoZone.addEventListener('drop', e => { e.preventDefault(); photoZone.classList.remove('drag-over'); handleFiles(e.dataTransfer.files); });
+
+  function handleFiles(files) {
+    [...files].forEach(file => {
+      if (photoFiles.length >= 10) return;
+      if (file.size > 5 * 1024 * 1024) { UI.toast('Photo too large (max 5MB)', 'error'); return; }
+      photoFiles.push(file);
+    });
+    renderPhotoPreviews();
+  }
+
+  function renderPhotoPreviews() {
+    const container = document.getElementById('photo-previews');
+    container.innerHTML = photoFiles.map((f, i) => {
+      const url = URL.createObjectURL(f);
+      return `<div class="photo-preview" id="preview-${i}">
+        <img src="${url}" alt="Photo ${i+1}">
+        <button class="photo-preview__remove" onclick="removePhoto(${i})">×</button>
+      </div>`;
+    }).join('');
+  }
+
+  function removePhoto(index) {
+    photoFiles.splice(index, 1);
+    renderPhotoPreviews();
+  }
+
+  // ─── Form Submission ──────────────────────
+  document.getElementById('listing-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const err = document.getElementById('form-error');
+    err.classList.add('hidden');
+
+    const estate = document.getElementById('f-estate').value;
+    const type   = document.getElementById('f-type').value;
+    const title  = document.getElementById('f-title').value.trim();
+    const price  = document.getElementById('f-price').value;
+    const phone  = document.getElementById('f-caretaker-phone').value.trim();
+
+    if (!estate || !type || !title || !price || !phone) {
+      err.textContent = 'Please fill in all required fields (marked with *).';
+      err.classList.remove('hidden'); return;
+    }
+
+    // Validation for custom location fields
+    let customCounty = '';
+    let customSubCounty = '';
+    let customEstateName = '';
+    let customWard = '';
+
+    if (estate === 'custom') {
+      customCounty = document.getElementById('custom-county').value;
+      customSubCounty = document.getElementById('custom-subcounty').value;
+      customEstateName = document.getElementById('custom-estate-name').value.trim();
+      customWard = document.getElementById('custom-ward').value;
+
+      if (!customCounty || !customSubCounty || !customWard || !customEstateName) {
+        err.textContent = 'Please select County, Sub-County, Ward, and enter the New Estate name.';
+        err.classList.remove('hidden'); return;
+      }
+    }
+
+    if (photoFiles.length === 0) {
+      err.textContent = 'Please upload at least one photo.';
+      err.classList.remove('hidden'); return;
+    }
+
+    const form = new FormData();
+    if (estate === 'custom') {
+      form.append('county', customCounty);
+      form.append('sub_county', customSubCounty);
+      form.append('ward', customWard);
+      form.append('estate_name', customEstateName);
+    } else {
+      form.append('estate_id', estate);
+    }
+
+    form.append('type',              type);
+    form.append('title',             title);
+    form.append('description',       document.getElementById('f-description').value);
+    
+    // Auto-prepend ward to street address for easier searchability
+    let street = document.getElementById('f-street').value.trim();
+    if (estate === 'custom' && customWard) {
+      street = customWard + (street ? ', ' + street : '');
+    }
+    form.append('street',            street);
+    
+    form.append('price',             price);
+    form.append('deposit',           document.getElementById('f-deposit').value || '');
+    form.append('caretaker_name',    document.getElementById('f-caretaker-name').value);
+    form.append('caretaker_phone',   phone);
+    form.append('caretaker_whatsapp',document.getElementById('f-caretaker-whatsapp').value || phone);
+
+    const amenities = [...document.querySelectorAll('.amenity-toggle input:checked')].map(i => i.value);
+    amenities.forEach(a => form.append('amenities[]', a));
+    photoFiles.forEach((f, i) => form.append(`photos[${i}]`, f));
+
+    const btn = document.getElementById('submit-listing-btn');
+    UI.setLoading(btn, true);
+    try {
+      await api.listings.store(form);
+      UI.toast('🎉 Listing submitted for review! We\'ll notify you once approved.', 'success');
+      document.getElementById('listing-form').reset();
+      photoFiles = [];
+      renderPhotoPreviews();
+      setTimeout(() => showPanel('my-listings'), 1500);
+    } catch(e) {
+      const errMsg = e.errors ? Object.values(e.errors).flat().join(' ') : e.message;
+      err.textContent = errMsg; err.classList.remove('hidden');
+    }
+    finally { UI.setLoading(btn, false); }
+  });
+
+  // ─── Load Inquiries ───────────────────────
+  async function loadInquiries() {
+    const container = document.getElementById('inquiries-content');
+    try {
+      const data = await api.listings.myListings(); // reuse, or add separate
+      const inq  = (await api.request?.('GET', '/my-inquiries')) || {};
+      // Simplified display
+      container.innerHTML = `<div class="card__body"><p class="text-muted">Inquiries feature coming soon. Use WhatsApp to communicate directly with caretakers.</p></div>`;
+    } catch(e) {
+      container.innerHTML = `<div class="card__body"><p class="text-muted">No inquiries yet.</p></div>`;
+    }
+  }
+
+  // ─── Load Profile ────────────────────────
+  function loadProfile() {
+    document.getElementById('profile-name').value     = user?.name || '';
+    document.getElementById('profile-email').value    = user?.email || '';
+    document.getElementById('profile-whatsapp').value = user?.whatsapp_number || '';
+  }
+
+  document.getElementById('save-profile-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('save-profile-btn');
+    UI.setLoading(btn, true);
+    try {
+      const res = await api.auth.updateProfile({
+        name:            document.getElementById('profile-name').value,
+        email:           document.getElementById('profile-email').value,
+        whatsapp_number: document.getElementById('profile-whatsapp').value,
+      });
+      api.saveSession(api.getToken(), res.user);
+      UI.toast('Profile updated!', 'success');
+    } catch(e) { UI.toast(e.message, 'error'); }
+    finally { UI.setLoading(btn, false); }
+  });
+
+  // ─── Panel Navigation ─────────────────────
+  function showPanel(name, e) {
+    if (e) { e.preventDefault(); }
+    document.querySelectorAll('.panel').forEach(p => p.classList.add('hidden'));
+    document.querySelectorAll('.dash-nav__item a').forEach(a => a.classList.remove('active'));
+    document.getElementById(`panel-${name}`).classList.remove('hidden');
+    const navLink = document.querySelector(`[data-panel="${name}"]`);
+    if (navLink) navLink.classList.add('active');
+
+    if (name === 'my-listings') loadMyListings();
+    if (name === 'inquiries')   loadInquiries();
+    if (name === 'profile')     loadProfile();
+  }
+
+  async function handleLogout() {
+    try { await api.auth.logout(); } catch(e) {}
+    api.clearSession();
+    window.location.href = 'index.html';
+  }
+</script>
+</body>
+</html>

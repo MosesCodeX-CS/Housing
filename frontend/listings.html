@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Browse verified rental listings in Kenya. Filter by estate, price, house type, and amenities.">
+  <title>Browse Listings — NyumbaFind</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .listings-layout { display: grid; grid-template-columns: 280px 1fr; gap: var(--space-xl); align-items: start; }
+    .listings-sidebar { position: sticky; top: 80px; }
+    .listings-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-xl); flex-wrap: wrap; gap: var(--space-md); }
+    .listings-count { font-size: 0.9rem; color: var(--text-muted); }
+    .sort-select { padding: 8px 16px; border: 1.5px solid var(--border); border-radius: var(--radius-full); font-size: 0.85rem; background: white; cursor: pointer; }
+    .active-filters { display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: var(--space-lg); }
+    .filter-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: var(--radius-full);
+      background: var(--green-100); color: var(--green-700);
+      font-size: 0.8rem; font-weight: 600;
+    }
+    .filter-tag button { background: none; border: none; cursor: pointer; color: inherit; font-size: 0.9rem; line-height: 1; }
+    @media(max-width:768px) { .listings-layout { grid-template-columns: 1fr; } .listings-sidebar { position: static; } }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar__inner">
+    <a href="index.html" class="navbar__logo">
+      <div class="navbar__logo-icon">🏠</div> Nyumba<span>Find</span>
+    </a>
+    <ul class="navbar__links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="listings.html" class="active">Browse</a></li>
+      <li><a href="dashboard.html">List Property</a></li>
+    </ul>
+    <div id="nav-auth-area">
+      <a href="auth.html" class="btn btn--secondary btn--sm">Login</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Quick Search Bar -->
+<div style="background:var(--green-900);padding:var(--space-md) 0">
+  <div class="container">
+    <div style="display:flex;gap:var(--space-sm);align-items:center">
+      <input type="text" id="top-search" class="form-input" style="flex:1;background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.2);color:white" placeholder="🔍  Search listings...">
+      <button onclick="applyFilters()" class="btn btn--gold">Search</button>
+    </div>
+  </div>
+</div>
+
+<div style="padding: var(--space-2xl) 0; min-height: 80vh">
+  <div class="container">
+
+    <!-- Active Filters -->
+    <div class="active-filters" id="active-filters"></div>
+
+    <div class="listings-layout">
+
+      <!-- ─── SIDEBAR FILTERS ────────────────── -->
+      <aside class="listings-sidebar">
+        <div class="filter-panel">
+          <div class="flex-between mb-md">
+            <h3 style="font-size:1.1rem">Filters</h3>
+            <button onclick="clearFilters()" class="btn btn--ghost btn--sm">Clear</button>
+          </div>
+
+          <!-- Estate -->
+          <div class="filter-panel__section">
+            <div class="filter-panel__title">📍 Estate</div>
+            <select class="form-select" id="filter-estate">
+              <option value="">All Estates</option>
+            </select>
+          </div>
+
+          <!-- House Type -->
+          <div class="filter-panel__section">
+            <div class="filter-panel__title">🏠 House Type</div>
+            <div class="type-buttons" id="type-buttons">
+              <button class="type-btn" data-type="">All</button>
+              <button class="type-btn" data-type="single_room">Single Room</button>
+              <button class="type-btn" data-type="bedsitter">Bedsitter</button>
+              <button class="type-btn" data-type="studio">Studio</button>
+              <button class="type-btn" data-type="1br">1 Bedroom</button>
+              <button class="type-btn" data-type="2br">2 Bedroom</button>
+              <button class="type-btn" data-type="3br">3 Bedroom</button>
+            </div>
+          </div>
+
+          <!-- Price Range -->
+          <div class="filter-panel__section">
+            <div class="filter-panel__title">💰 Price Range (KSh/month)</div>
+            <div class="price-inputs">
+              <input type="number" class="price-input" id="filter-min" placeholder="Min" min="0" step="500">
+              <input type="number" class="price-input" id="filter-max" placeholder="Max" min="0" step="500">
+            </div>
+          </div>
+
+          <!-- Amenities -->
+          <div class="filter-panel__section">
+            <div class="filter-panel__title">🛠️ Amenities</div>
+            <div class="checkbox-group">
+              <label class="checkbox-label"><input type="checkbox" value="water" class="amenity-cb"> 💧 Running Water</label>
+              <label class="checkbox-label"><input type="checkbox" value="electricity" class="amenity-cb"> ⚡ Electricity</label>
+              <label class="checkbox-label"><input type="checkbox" value="wifi" class="amenity-cb"> 📶 WiFi</label>
+              <label class="checkbox-label"><input type="checkbox" value="parking" class="amenity-cb"> 🅿️ Parking</label>
+              <label class="checkbox-label"><input type="checkbox" value="security" class="amenity-cb"> 🛡️ Security Guard</label>
+              <label class="checkbox-label"><input type="checkbox" value="cctv" class="amenity-cb"> 📷 CCTV</label>
+              <label class="checkbox-label"><input type="checkbox" value="borehole" class="amenity-cb"> 🌊 Borehole</label>
+            </div>
+          </div>
+
+          <button onclick="applyFilters()" class="btn btn--primary btn--block">Apply Filters</button>
+        </div>
+      </aside>
+
+      <!-- ─── LISTINGS GRID ──────────────────── -->
+      <main>
+        <div class="listings-header">
+          <div>
+            <h2 id="listings-title">All Listings</h2>
+            <p class="listings-count" id="listings-count">Loading...</p>
+          </div>
+          <select class="sort-select" id="sort-select" onchange="applyFilters()">
+            <option value="newest">Newest First</option>
+            <option value="price_asc">Price: Low to High</option>
+            <option value="price_desc">Price: High to Low</option>
+            <option value="popular">Most Viewed</option>
+          </select>
+        </div>
+
+        <div class="grid-3" id="listings-grid" style="gap:var(--space-lg)">
+          <!-- Will be rendered by JS -->
+        </div>
+
+        <div class="pagination mt-xl" id="pagination"></div>
+      </main>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer__bottom">
+      <p>© 2024 NyumbaFind 🇰🇪</p>
+      <a href="index.html" style="color:var(--gold-400)">← Back to Home</a>
+    </div>
+  </div>
+</footer>
+
+<script src="js/api.js"></script>
+<script>
+  let currentParams = {};
+  let currentPage   = 1;
+  let selectedType  = '';
+  let selectedCounty = '';
+  let selectedSubCounty = '';
+  let selectedEstateSlug = '';
+  let selectedVillage = '';
+  let selectedLocation = null;
+
+  // ─── Init ──────────────────────────────────────
+  (async function() {
+    // Nav auth
+    if (api.isLoggedIn()) {
+      document.getElementById('nav-auth-area').innerHTML =
+        `<a href="dashboard.html" class="btn btn--secondary btn--sm">Dashboard</a>`;
+    }
+
+    // Load estates for filter
+    try {
+      const estates = await api.estates.list();
+      const sel = document.getElementById('filter-estate');
+      estates.forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.slug; opt.textContent = e.name;
+        sel.appendChild(opt);
+      });
+    } catch(e) {}
+
+    // Read URL params
+    const url = new URLSearchParams(window.location.search);
+    if (url.get('estate')) {
+      document.getElementById('filter-estate').value = url.get('estate');
+      selectedEstateSlug = url.get('estate');
+    }
+    if (url.get('type'))   setType(url.get('type'));
+    if (url.get('q'))      document.getElementById('top-search').value = url.get('q');
+    if (url.get('min_price')) document.getElementById('filter-min').value = url.get('min_price');
+    if (url.get('max_price')) document.getElementById('filter-max').value = url.get('max_price');
+    if (url.get('sort'))      document.getElementById('sort-select').value = url.get('sort');
+    
+    // Read county and sub_county from URL
+    selectedCounty = url.get('county') || '';
+    selectedSubCounty = url.get('sub_county') || '';
+    if (selectedCounty) document.getElementById('top-search').value = selectedCounty;
+    if (selectedSubCounty) document.getElementById('top-search').value = selectedSubCounty;
+
+    // Autocomplete for top search input
+    const topSearch = document.getElementById('top-search');
+    if (window.locations) {
+      locations.setupAutocomplete(topSearch, (loc) => {
+        selectedLocation = loc;
+        selectedCounty = '';
+        selectedSubCounty = '';
+        selectedEstateSlug = '';
+        selectedVillage = '';
+        if (loc.type === 'county') selectedCounty = loc.county;
+        if (loc.type === 'sub_county') selectedSubCounty = loc.sub_county;
+        if (loc.type === 'estate') selectedEstateSlug = loc.slug;
+        if (loc.type === 'village') selectedVillage = loc.value;
+        applyFilters();
+      });
+    }
+
+    // Type button listeners
+    document.querySelectorAll('.type-btn').forEach(btn => {
+      btn.addEventListener('click', () => { setType(btn.dataset.type); applyFilters(); });
+    });
+
+    await loadListings();
+  })();
+
+  function setType(type) {
+    selectedType = type;
+    document.querySelectorAll('.type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+  }
+
+  async function loadListings(page = 1) {
+    currentPage = page;
+    const grid = document.getElementById('listings-grid');
+    grid.innerHTML = UI.skeletonCards(6);
+
+    const params = buildParams(page);
+    currentParams = params;
+
+    try {
+      const data = await api.search(params);
+      const listings = data.data || [];
+      const total    = data.total || 0;
+
+      document.getElementById('listings-count').textContent = `${total} listing${total !== 1 ? 's' : ''} found`;
+      updateTitle(params);
+      updateActiveFilters(params);
+
+      grid.innerHTML = listings.length
+        ? listings.map(l => UI.renderListingCard(l)).join('')
+        : `<div class="empty-state" style="grid-column:1/-1">
+            <div class="empty-state__icon">🔍</div>
+            <div class="empty-state__title">No listings found</div>
+            <p class="text-muted">Try adjusting your filters or search in a different estate.</p>
+            <button onclick="clearFilters()" class="btn btn--outline mt-md">Clear Filters</button>
+           </div>`;
+
+      renderPagination(data.current_page, data.last_page);
+    } catch(e) {
+      grid.innerHTML = `<div class="alert alert--error" style="grid-column:1/-1">Error loading listings: ${e.message}</div>`;
+    }
+  }
+
+  function buildParams(page = 1) {
+    const params = { page, sort: document.getElementById('sort-select').value };
+    const q     = document.getElementById('top-search').value.trim();
+    const estate = document.getElementById('filter-estate').value;
+    const min   = document.getElementById('filter-min').value;
+    const max   = document.getElementById('filter-max').value;
+    const amenities = [...document.querySelectorAll('.amenity-cb:checked')].map(c => c.value);
+
+    // If typing doesn't match selected suggestion, clear suggestion params and fall back to keyword
+    if (selectedLocation && q !== selectedLocation.value) {
+      selectedLocation = null;
+      selectedCounty = '';
+      selectedSubCounty = '';
+      selectedEstateSlug = '';
+      selectedVillage = '';
+    }
+
+    if (selectedCounty) {
+      params.county = selectedCounty;
+    } else if (selectedSubCounty) {
+      params.sub_county = selectedSubCounty;
+    } else if (selectedEstateSlug) {
+      params.estate = selectedEstateSlug;
+    } else if (selectedVillage) {
+      params.q = selectedVillage;
+    } else if (q) {
+      params.q = q;
+    }
+
+    // Estate dropdown override
+    if (estate && estate !== selectedEstateSlug) {
+      params.estate = estate;
+    }
+
+    if (selectedType) params.type = selectedType;
+    if (min)     params.min_price = min;
+    if (max)     params.max_price = max;
+    if (amenities.length) params['amenities[]'] = amenities;
+    return params;
+  }
+
+  function applyFilters() { loadListings(1); }
+
+  function clearFilters() {
+    document.getElementById('filter-estate').value = '';
+    document.getElementById('top-search').value = '';
+    document.getElementById('filter-min').value = '';
+    document.getElementById('filter-max').value = '';
+    document.querySelectorAll('.amenity-cb').forEach(c => c.checked = false);
+    selectedLocation = null;
+    selectedCounty = '';
+    selectedSubCounty = '';
+    selectedEstateSlug = '';
+    selectedVillage = '';
+    setType('');
+    loadListings(1);
+  }
+
+  function updateTitle(params) {
+    const parts = [];
+    if (params.county)     parts.push(params.county);
+    if (params.sub_county) parts.push(params.sub_county);
+    if (params.estate) {
+      const name = (selectedLocation && selectedLocation.slug === params.estate) ? selectedLocation.value : params.estate;
+      parts.push(name.charAt(0).toUpperCase() + name.slice(1));
+    }
+    if (selectedVillage)   parts.push(selectedVillage);
+    if (params.type)       parts.push(UI.houseTypeLabel(params.type));
+    document.getElementById('listings-title').textContent = parts.length ? parts.join(' · ') : 'All Listings';
+  }
+
+  function updateActiveFilters(params) {
+    const container = document.getElementById('active-filters');
+    const tags = [];
+    if (params.county)     tags.push({ label: `🇰🇪 County: ${params.county}`, key: 'county' });
+    if (params.sub_county) tags.push({ label: `📍 Area: ${params.sub_county}`, key: 'sub_county' });
+    if (params.estate) {
+      const name = (selectedLocation && selectedLocation.slug === params.estate) ? selectedLocation.value : params.estate;
+      tags.push({ label: `🏢 Estate: ${name}`, key: 'estate' });
+    }
+    if (selectedVillage)   tags.push({ label: `🏡 Village: ${selectedVillage}`, key: 'village' });
+    if (params.type)       tags.push({ label: `🏠 ${UI.houseTypeLabel(params.type)}`, key: 'type' });
+    if (params.min_price)  tags.push({ label: `💰 Min ${UI.formatPrice(params.min_price)}`, key: 'min' });
+    if (params.max_price)  tags.push({ label: `💰 Max ${UI.formatPrice(params.max_price)}`, key: 'max' });
+
+    container.innerHTML = tags.map(t =>
+      `<div class="filter-tag">${t.label} <button onclick="removeFilter('${t.key}')">×</button></div>`
+    ).join('');
+  }
+
+  function removeFilter(key) {
+    if (key === 'estate')     { document.getElementById('filter-estate').value = ''; selectedEstateSlug = ''; }
+    if (key === 'type')       setType('');
+    if (key === 'min')        document.getElementById('filter-min').value = '';
+    if (key === 'max')        document.getElementById('filter-max').value = '';
+    if (key === 'county')     { selectedCounty = ''; document.getElementById('top-search').value = ''; }
+    if (key === 'sub_county') { selectedSubCounty = ''; document.getElementById('top-search').value = ''; }
+    if (key === 'village')    { selectedVillage = ''; document.getElementById('top-search').value = ''; }
+    applyFilters();
+  }
+
+  renderPagination = function(current, last) {
+    if (last <= 1) { document.getElementById('pagination').innerHTML = ''; return; }
+    let html = `<button class="page-btn" onclick="loadListings(${current - 1})" ${current <= 1 ? 'disabled' : ''}>‹</button>`;
+    for (let i = 1; i <= last; i++) {
+      if (i === 1 || i === last || (i >= current - 2 && i <= current + 2)) {
+        html += `<button class="page-btn ${i === current ? 'active' : ''}" onclick="loadListings(${i})">${i}</button>`;
+      } else if (i === current - 3 || i === current + 3) {
+        html += `<span style="padding:0 4px;color:var(--text-muted)">…</span>`;
+      }
+    }
+    html += `<button class="page-btn" onclick="loadListings(${current + 1})" ${current >= last ? 'disabled' : ''}>›</button>`;
+    document.getElementById('pagination').innerHTML = html;
+  }
+</script>
+
+</body>
+</html>

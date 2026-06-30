@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Listing Detail — NyumbaFind</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .detail-layout { display: grid; grid-template-columns: 1fr 380px; gap: var(--space-2xl); align-items: start; }
+    .detail-sidebar { position: sticky; top: 80px; }
+    .contact-card { background: white; border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); overflow: hidden; border: 1px solid var(--border); }
+    .contact-card__header { background: linear-gradient(135deg, var(--green-700), var(--green-900)); padding: var(--space-xl); color: white; text-align: center; }
+    .contact-card__price { font-family: var(--font-heading); font-size: 2.5rem; font-weight: 800; }
+    .contact-card__price span { font-size: 1rem; opacity: 0.8; }
+    .contact-card__body { padding: var(--space-lg); }
+    .amenity-list { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); }
+    .amenity-item { display: flex; align-items: center; gap: var(--space-sm); font-size: 0.9rem; }
+    .amenity-item .icon { font-size: 1.2rem; }
+    .amenity-item.disabled { opacity: 0.35; text-decoration: line-through; }
+    .info-row { display: flex; justify-content: space-between; padding: var(--space-sm) 0; border-bottom: 1px solid var(--gray-100); font-size: 0.9rem; }
+    .info-row:last-child { border-bottom: none; }
+    .info-row__label { color: var(--text-muted); }
+    .info-row__value { font-weight: 600; }
+    .review-card { background: var(--gray-50); border-radius: var(--radius-md); padding: var(--space-md); }
+    .review-card__header { display: flex; justify-content: space-between; margin-bottom: var(--space-sm); }
+    .gallery-placeholder { height: 400px; background: linear-gradient(135deg, var(--green-100), var(--green-50)); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; font-size: 4rem; }
+    @media(max-width:900px) { .detail-layout { grid-template-columns: 1fr; } .detail-sidebar { position: static; } }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar__inner">
+    <a href="index.html" class="navbar__logo"><div class="navbar__logo-icon">🏠</div> Nyumba<span>Find</span></a>
+    <ul class="navbar__links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="listings.html">Browse</a></li>
+    </ul>
+    <div id="nav-auth-area"><a href="auth.html" class="btn btn--secondary btn--sm">Login</a></div>
+  </div>
+</nav>
+
+<!-- Breadcrumb -->
+<div style="background:white;border-bottom:1px solid var(--border);padding:12px 0">
+  <div class="container">
+    <div class="flex gap-sm text-sm text-muted">
+      <a href="index.html" class="text-green">Home</a>
+      <span>›</span>
+      <a href="listings.html" class="text-green">Listings</a>
+      <span>›</span>
+      <span id="breadcrumb-title">Loading...</span>
+    </div>
+  </div>
+</div>
+
+<!-- Loading state -->
+<div id="loading-state" style="padding:var(--space-4xl) 0;text-align:center">
+  <div class="skeleton" style="height:400px;border-radius:var(--radius-lg);margin-bottom:var(--space-xl)"></div>
+</div>
+
+<!-- Main content (hidden until loaded) -->
+<div id="listing-content" class="hidden" style="padding:var(--space-2xl) 0">
+  <div class="container">
+
+    <!-- Title row -->
+    <div class="flex-between mb-lg" style="flex-wrap:wrap;gap:var(--space-md)">
+      <div>
+        <div style="display:flex;align-items:center;gap:var(--space-sm);margin-bottom:var(--space-sm)">
+          <span class="tag" id="listing-type-tag">—</span>
+          <span id="verified-badge-el"></span>
+          <span id="featured-badge-el"></span>
+        </div>
+        <h1 id="listing-title" style="font-size:clamp(1.4rem,3vw,2rem)">—</h1>
+        <p class="text-muted mt-sm" id="listing-location">📍 —</p>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:var(--font-heading);font-size:2rem;font-weight:800;color:var(--green-600)" id="listing-price">—</div>
+        <p class="text-sm text-muted">per month</p>
+      </div>
+    </div>
+
+    <div class="detail-layout">
+      <!-- ─── LEFT COLUMN ─────────────────────── -->
+      <div>
+        <!-- Photo Gallery -->
+        <div id="gallery-container" class="mb-xl"></div>
+
+        <!-- Details Tabs -->
+        <div class="tabs mb-xl" id="detail-tabs">
+          <button class="tab-btn active" onclick="switchTab('overview')">Overview</button>
+          <button class="tab-btn" onclick="switchTab('amenities')">Amenities</button>
+          <button class="tab-btn" onclick="switchTab('reviews')">Reviews</button>
+          <button class="tab-btn" onclick="switchTab('report')">Report</button>
+        </div>
+
+        <!-- Overview Tab -->
+        <div class="tab-content active" id="tab-overview">
+          <div class="card">
+            <div class="card__body">
+              <h3 class="mb-md">About this Property</h3>
+              <p id="listing-description" class="text-muted" style="line-height:1.8">—</p>
+              <hr style="margin:var(--space-lg) 0;border:none;border-top:1px solid var(--border)">
+              <h4 class="mb-md">Property Details</h4>
+              <div id="listing-info-rows"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Amenities Tab -->
+        <div class="tab-content" id="tab-amenities">
+          <div class="card">
+            <div class="card__body">
+              <h3 class="mb-lg">Amenities & Features</h3>
+              <div class="amenity-list" id="amenity-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reviews Tab -->
+        <div class="tab-content" id="tab-reviews">
+          <div class="card">
+            <div class="card__body">
+              <div class="flex-between mb-lg">
+                <h3>Tenant Reviews</h3>
+                <div style="display:flex;align-items:center;gap:var(--space-sm)">
+                  <div class="stars" id="overall-stars"></div>
+                  <span class="font-bold" id="overall-rating">0</span>
+                  <span class="text-muted text-sm" id="review-count">(0 reviews)</span>
+                </div>
+              </div>
+              <div id="reviews-list"><p class="text-muted">No reviews yet.</p></div>
+
+              <!-- Write review -->
+              <div id="write-review" class="hidden" style="margin-top:var(--space-xl);padding-top:var(--space-lg);border-top:1px solid var(--border)">
+                <h4 class="mb-md">Leave a Review</h4>
+                <div class="form-group mb-md">
+                  <label class="form-label">Rating</label>
+                  <div style="display:flex;gap:var(--space-sm)">
+                    <button class="star-btn" data-rating="1">★</button>
+                    <button class="star-btn" data-rating="2">★</button>
+                    <button class="star-btn" data-rating="3">★</button>
+                    <button class="star-btn" data-rating="4">★</button>
+                    <button class="star-btn" data-rating="5">★</button>
+                  </div>
+                </div>
+                <div class="form-group mb-md">
+                  <label class="form-label">Comment (optional)</label>
+                  <textarea id="review-comment" class="form-input" rows="3" placeholder="How was the caretaker? Is the house as described?"></textarea>
+                </div>
+                <button id="submit-review-btn" class="btn btn--primary">Submit Review</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Report Tab -->
+        <div class="tab-content" id="tab-report">
+          <div class="card">
+            <div class="card__body">
+              <h3 class="mb-md">Report this Listing</h3>
+              <p class="text-muted mb-lg">If this listing is fake, overpriced, or no longer available, please let us know. Our team reviews all reports within 24 hours.</p>
+              <div class="form-group mb-md">
+                <label class="form-label">Reason</label>
+                <select class="form-select" id="report-reason">
+                  <option value="">Select reason...</option>
+                  <option value="fake_listing">Fake Listing</option>
+                  <option value="already_occupied">Already Occupied</option>
+                  <option value="wrong_price">Wrong Price</option>
+                  <option value="wrong_location">Wrong Location</option>
+                  <option value="scam">Scam / Fraud</option>
+                  <option value="inappropriate_content">Inappropriate Content</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="form-group mb-lg">
+                <label class="form-label">Details (optional)</label>
+                <textarea id="report-details" class="form-input" rows="3" placeholder="Describe the issue..."></textarea>
+              </div>
+              <button id="submit-report-btn" class="btn btn--danger">Submit Report</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── SIDEBAR ──────────────────────────── -->
+      <aside class="detail-sidebar">
+        <div class="contact-card">
+          <div class="contact-card__header">
+            <div class="contact-card__price" id="sidebar-price">—</div>
+            <div style="font-size:0.9rem;opacity:0.8">per month</div>
+            <div style="margin-top:var(--space-sm);font-size:0.85rem;opacity:0.7" id="sidebar-deposit">Deposit: —</div>
+          </div>
+          <div class="contact-card__body">
+            <div id="sidebar-status" style="text-align:center;margin-bottom:var(--space-md)"></div>
+            <a href="#" id="whatsapp-btn" target="_blank" class="btn btn--whatsapp btn--block btn--lg" style="margin-bottom:var(--space-md)">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+              Chat on WhatsApp
+            </a>
+            <button id="inquire-btn" class="btn btn--outline btn--block" style="margin-bottom:var(--space-lg)">📩 Save & Inquire</button>
+
+            <div style="border-top:1px solid var(--border);padding-top:var(--space-md)">
+              <h4 class="mb-sm" style="font-size:0.9rem">Caretaker</h4>
+              <div class="flex gap-md">
+                <div style="width:40px;height:40px;border-radius:50%;background:var(--green-100);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">👤</div>
+                <div>
+                  <div class="font-semi" id="caretaker-name">—</div>
+                  <div class="text-sm text-muted" id="caretaker-phone">—</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="border-top:1px solid var(--border);margin-top:var(--space-md);padding-top:var(--space-md)">
+              <div class="info-row">
+                <span class="info-row__label">Last confirmed</span>
+                <span class="info-row__value text-green" id="vacancy-confirmed">—</span>
+              </div>
+              <div class="info-row">
+                <span class="info-row__label">Views</span>
+                <span class="info-row__value" id="views-count">—</span>
+              </div>
+              <div class="info-row">
+                <span class="info-row__label">Listed on</span>
+                <span class="info-row__value" id="listed-date">—</span>
+              </div>
+            </div>
+
+            <!-- Share -->
+            <button onclick="navigator.clipboard.writeText(window.location.href);UI.toast('Link copied!','success')" class="btn btn--ghost btn--block btn--sm mt-md">🔗 Copy Link</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<!-- Not found state -->
+<div id="not-found" class="hidden" style="padding:var(--space-4xl) 0">
+  <div class="container">
+    <div class="empty-state">
+      <div class="empty-state__icon">🏚️</div>
+      <div class="empty-state__title">Listing Not Found</div>
+      <p class="text-muted">This listing may have been removed or is no longer available.</p>
+      <a href="listings.html" class="btn btn--primary mt-lg">Browse Other Listings</a>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  let listing = null;
+  let selectedRating = 0;
+  const listingId = new URLSearchParams(window.location.search).get('id');
+
+  (async function() {
+    if (!listingId) { showNotFound(); return; }
+
+    // Nav
+    if (api.isLoggedIn()) {
+      document.getElementById('nav-auth-area').innerHTML =
+        `<a href="dashboard.html" class="btn btn--secondary btn--sm">Dashboard</a>`;
+    }
+
+    try {
+      const data = await api.listings.show(listingId);
+      listing = data.listing;
+      renderListing(listing, data.whatsapp_link, data.average_rating);
+    } catch(e) { showNotFound(); }
+
+    // Review stars
+    document.querySelectorAll('.star-btn').forEach(btn => {
+      btn.style.cssText = 'font-size:1.8rem;background:none;border:none;cursor:pointer;color:var(--gray-300);transition:var(--transition)';
+      btn.addEventListener('click', () => {
+        selectedRating = parseInt(btn.dataset.rating);
+        document.querySelectorAll('.star-btn').forEach((b, i) => {
+          b.style.color = i < selectedRating ? 'var(--gold-400)' : 'var(--gray-300)';
+        });
+      });
+    });
+
+    // Submit review
+    document.getElementById('submit-review-btn')?.addEventListener('click', submitReview);
+    document.getElementById('submit-report-btn')?.addEventListener('click', submitReport);
+    document.getElementById('inquire-btn')?.addEventListener('click', handleInquire);
+  })();
+
+  function renderListing(l, whatsappLink, avgRating) {
+    document.title = `${l.title} — NyumbaFind`;
+    document.getElementById('breadcrumb-title').textContent = l.title;
+
+    // Type & badges
+    document.getElementById('listing-type-tag').textContent = UI.houseTypeLabel(l.type);
+    if (l.is_verified) document.getElementById('verified-badge-el').innerHTML = `<span class="verified-badge">Verified</span>`;
+    if (l.is_featured) document.getElementById('featured-badge-el').innerHTML = `<span class="tag tag--gold">⭐ Featured</span>`;
+
+    document.getElementById('listing-title').textContent    = l.title;
+    document.getElementById('listing-location').textContent = `📍 ${l.estate?.name || ''}, ${l.estate?.county || ''}${l.street ? ' · ' + l.street : ''}`;
+    document.getElementById('listing-price').textContent    = UI.formatPrice(l.price);
+    document.getElementById('listing-description').textContent = l.description || 'No description provided.';
+
+    // Sidebar
+    document.getElementById('sidebar-price').textContent  = UI.formatPrice(l.price);
+    document.getElementById('sidebar-deposit').textContent = l.deposit ? `Deposit: ${UI.formatPrice(l.deposit)}` : 'Deposit: TBD';
+    document.getElementById('caretaker-name').textContent  = l.caretaker_name || 'Caretaker';
+    document.getElementById('caretaker-phone').textContent = l.caretaker_phone || '';
+    document.getElementById('vacancy-confirmed').textContent = l.vacancy_confirmed_at || 'Recently';
+    document.getElementById('views-count').textContent     = l.views_count?.toLocaleString() || '0';
+    document.getElementById('listed-date').textContent     = UI.formatDate(l.created_at);
+
+    // Status
+    const statusMap = { active: ['🟢 Vacant', 'tag--green'], occupied: ['🔴 Occupied', 'tag--red'], pending: ['⏳ Pending Verification', ''] };
+    const [statusTxt, statusClass] = statusMap[l.status] || ['Unknown', ''];
+    document.getElementById('sidebar-status').innerHTML = `<span class="tag ${statusClass}" style="font-size:0.9rem">${statusTxt}</span>`;
+
+    // WhatsApp
+    document.getElementById('whatsapp-btn').href = whatsappLink || l.whatsapp_link || '#';
+
+    // Gallery
+    renderGallery(l.media || []);
+
+    // Info rows
+    const rows = [
+      ['Type', UI.houseTypeLabel(l.type)],
+      ['Estate', l.estate?.name || '—'],
+      ['County', l.estate?.county || '—'],
+      ['Price', UI.formatPrice(l.price) + '/month'],
+      ['Deposit', l.deposit ? UI.formatPrice(l.deposit) : 'N/A'],
+      ['Status', l.status.charAt(0).toUpperCase() + l.status.slice(1)],
+    ];
+    document.getElementById('listing-info-rows').innerHTML = rows.map(([k, v]) =>
+      `<div class="info-row"><span class="info-row__label">${k}</span><span class="info-row__value">${v}</span></div>`
+    ).join('');
+
+    // Amenities
+    const allAmenities = { water:'💧 Running Water', electricity:'⚡ Electricity', wifi:'📶 WiFi', parking:'🅿️ Parking', security:'🛡️ Security', borehole:'🌊 Borehole', cctv:'📷 CCTV', gym:'🏋️ Gym', pool:'🏊 Swimming Pool' };
+    document.getElementById('amenity-list').innerHTML = Object.entries(allAmenities).map(([key, label]) => {
+      const has = l.amenities?.[key];
+      return `<div class="amenity-item ${has ? '' : 'disabled'}"><span class="icon">${label.split(' ')[0]}</span><span>${label.substring(label.indexOf(' ') + 1)}</span></div>`;
+    }).join('');
+
+    // Reviews
+    const reviews = l.reviews || [];
+    document.getElementById('overall-rating').textContent  = (avgRating || 0).toFixed(1);
+    document.getElementById('overall-stars').innerHTML     = UI.stars(avgRating || 0);
+    document.getElementById('review-count').textContent    = `(${reviews.length} review${reviews.length !== 1 ? 's' : ''})`;
+    document.getElementById('reviews-list').innerHTML = reviews.length
+      ? reviews.map(r => `
+          <div class="review-card mb-md">
+            <div class="review-card__header">
+              <span class="font-semi">${r.user?.name || 'Anonymous'}</span>
+              <div class="flex gap-sm">${UI.stars(r.rating)} <span class="text-sm text-muted">${UI.formatDate(r.created_at)}</span></div>
+            </div>
+            <p class="text-sm text-muted">${r.comment || ''}</p>
+          </div>`).join('')
+      : '<p class="text-muted">No reviews yet. Be the first!</p>';
+
+    if (api.isLoggedIn()) document.getElementById('write-review').classList.remove('hidden');
+
+    document.getElementById('loading-state').classList.add('hidden');
+    document.getElementById('listing-content').classList.remove('hidden');
+  }
+
+  function renderGallery(media) {
+    const photos = media.filter(m => m.type === 'photo');
+    const container = document.getElementById('gallery-container');
+    if (!photos.length) {
+      container.innerHTML = `<div class="gallery-placeholder">🏠</div>`;
+      return;
+    }
+    const main = photos[0];
+    const thumbs = photos.slice(1, 3);
+    const remaining = photos.length - 3;
+
+    container.innerHTML = `
+      <div class="gallery">
+        <div class="gallery__main"><img src="${main.url}" alt="Main photo" loading="eager"></div>
+        ${thumbs.length ? `<div class="gallery__thumbs">
+          ${thumbs.map((t, i) => `
+            <div class="gallery__thumb">
+              <img src="${t.url}" alt="Photo ${i+2}" loading="lazy">
+              ${i === 1 && remaining > 0 ? `<div class="gallery__more">+${remaining} more</div>` : ''}
+            </div>`).join('')}
+        </div>` : ''}
+      </div>`;
+  }
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`tab-${name}`).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  async function handleInquire() {
+    if (!api.isLoggedIn()) { window.location.href = 'auth.html'; return; }
+    const btn = document.getElementById('inquire-btn');
+    UI.setLoading(btn, true);
+    try {
+      const res = await api.listings.inquire(listingId, `I'm interested in: ${listing?.title}`);
+      UI.toast('Inquiry recorded! Opening WhatsApp...', 'success');
+      setTimeout(() => window.open(document.getElementById('whatsapp-btn').href, '_blank'), 500);
+    } catch(e) {
+      if (e.message.includes('already')) {
+        UI.toast('Inquiry already recorded. Opening WhatsApp...', 'info');
+        window.open(document.getElementById('whatsapp-btn').href, '_blank');
+      } else {
+        UI.toast(e.message, 'error');
+      }
+    } finally { UI.setLoading(btn, false); }
+  }
+
+  async function submitReview() {
+    if (!api.isLoggedIn()) { window.location.href = 'auth.html'; return; }
+    if (!selectedRating) { UI.toast('Please select a star rating.', 'warning'); return; }
+    const btn = document.getElementById('submit-review-btn');
+    UI.setLoading(btn, true);
+    try {
+      await api.listings.review(listingId, selectedRating, document.getElementById('review-comment').value);
+      UI.toast('Review submitted! Thank you.', 'success');
+      setTimeout(() => window.location.reload(), 1000);
+    } catch(e) { UI.toast(e.message, 'error'); }
+    finally { UI.setLoading(btn, false); }
+  }
+
+  async function submitReport() {
+    if (!api.isLoggedIn()) { window.location.href = 'auth.html'; return; }
+    const reason  = document.getElementById('report-reason').value;
+    const details = document.getElementById('report-details').value;
+    if (!reason) { UI.toast('Please select a reason.', 'warning'); return; }
+    const btn = document.getElementById('submit-report-btn');
+    UI.setLoading(btn, true);
+    try {
+      await api.listings.report(listingId, reason, details);
+      UI.toast("Report submitted. We'll review within 24 hours.", 'success');
+      btn.textContent = '✅ Reported';
+      btn.disabled = true;
+    } catch(e) { UI.toast(e.message, 'error'); }
+    finally { UI.setLoading(btn, false); }
+  }
+
+  function showNotFound() {
+    document.getElementById('loading-state').classList.add('hidden');
+    document.getElementById('not-found').classList.remove('hidden');
+  }
+</script>
+</body>
+</html>

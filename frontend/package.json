@@ -1,0 +1,13 @@
+{
+  "name": "nyumbafind-frontend",
+  "version": "1.0.0",
+  "description": "NyumbaFind Static Web Client",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx -y serve",
+    "dev": "npx -y serve"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

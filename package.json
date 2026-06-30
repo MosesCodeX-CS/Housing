@@ -1,0 +1,10 @@
+{
+  "name": "nyumbafind-workspace",
+  "version": "1.0.0",
+  "description": "Root workspace to start both backend and frontend concurrently",
+  "scripts": {
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd nyumbafind-api && php artisan serve --port=8000",
+    "dev": "npx -y concurrently \"npm:dev:backend\" \"npm:dev:frontend\""
+  }
+}

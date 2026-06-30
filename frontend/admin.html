@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel — NyumbaFind</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .admin-header-bar { background: var(--green-900); padding: var(--space-md) 0; }
+    .admin-header-inner { display: flex; align-items: center; justify-content: space-between; }
+    .admin-tabs-bar { background: white; border-bottom: 2px solid var(--border); padding: 0; position: sticky; top: 0; z-index: 100; }
+    .admin-tabs { display: flex; gap: 0; overflow-x: auto; }
+    .admin-tab { padding: var(--space-md) var(--space-xl); font-weight: 600; font-size: 0.9rem; border: none; background: none; cursor: pointer; border-bottom: 3px solid transparent; color: var(--gray-600); white-space: nowrap; transition: var(--transition); }
+    .admin-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .admin-tab:hover { color: var(--primary); background: var(--green-50); }
+    .admin-panel { padding: var(--space-xl); display: none; }
+    .admin-panel.active { display: block; }
+    .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-lg); margin-bottom: var(--space-xl); }
+    .action-btns { display: flex; gap: var(--space-sm); flex-wrap: wrap; }
+    .listing-row td:last-child { min-width: 220px; }
+    .filter-row { display: flex; gap: var(--space-md); flex-wrap: wrap; margin-bottom: var(--space-lg); align-items: flex-end; }
+    .filter-row .form-group { margin: 0; }
+    @media(max-width:768px) { .stat-grid { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+
+<!-- Admin Header -->
+<div class="admin-header-bar">
+  <div class="container">
+    <div class="admin-header-inner">
+      <a href="index.html" class="navbar__logo"><div class="navbar__logo-icon">🏠</div> Nyumba<span>Find</span> <span style="font-size:0.7rem;background:rgba(255,0,0,0.3);padding:2px 8px;border-radius:var(--radius-full);margin-left:var(--space-sm);color:white">ADMIN</span></a>
+      <div style="color:rgba(255,255,255,0.7);font-size:0.85rem" id="admin-user-label">—</div>
+      <button onclick="handleLogout()" class="btn btn--secondary btn--sm">Logout</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Tabs -->
+<div class="admin-tabs-bar">
+  <div class="admin-tabs">
+    <button class="admin-tab active" onclick="showTab('dashboard')">📊 Dashboard</button>
+    <button class="admin-tab" onclick="showTab('pending')">⏳ Pending</button>
+    <button class="admin-tab" onclick="showTab('all-listings')">📋 All Listings</button>
+    <button class="admin-tab" onclick="showTab('reports')">🚨 Reports</button>
+    <button class="admin-tab" onclick="showTab('users')">👥 Users</button>
+  </div>
+</div>
+
+<!-- ═══ DASHBOARD ══════════════════════════════════ -->
+<div class="admin-panel active" id="tab-dashboard">
+  <h2 class="mb-xl">Dashboard Overview</h2>
+  <div class="stat-grid" id="dash-stats">
+    <div class="stat-card"><div class="stat-card__number" id="d-pending">—</div><div class="stat-card__label">Pending Listings</div></div>
+    <div class="stat-card" style="border-color:var(--green-400)"><div class="stat-card__number" id="d-active" style="color:var(--green-400)">—</div><div class="stat-card__label">Active Listings</div></div>
+    <div class="stat-card" style="border-color:var(--danger)"><div class="stat-card__number" id="d-reports" style="color:var(--danger)">—</div><div class="stat-card__label">Open Reports</div></div>
+    <div class="stat-card" style="border-color:var(--gold-400)"><div class="stat-card__number" id="d-users" style="color:var(--gold-400)">—</div><div class="stat-card__label">Total Users</div></div>
+  </div>
+  <div class="card">
+    <div class="card__body">
+      <h3 class="mb-md">Quick Links</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:var(--space-md)">
+        <button onclick="showTab('pending')" class="btn btn--primary">⏳ Review Pending</button>
+        <button onclick="showTab('reports')" class="btn btn--danger">🚨 Handle Reports</button>
+        <button onclick="showTab('all-listings')" class="btn btn--outline">📋 Browse All</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PENDING LISTINGS ═══════════════════════════ -->
+<div class="admin-panel" id="tab-pending">
+  <h2 class="mb-xl">Pending Verification</h2>
+  <div id="pending-content">
+    <div class="skeleton" style="height:100px;margin-bottom:var(--space-md)"></div>
+    <div class="skeleton" style="height:100px"></div>
+  </div>
+</div>
+
+<!-- ═══ ALL LISTINGS ═══════════════════════════════ -->
+<div class="admin-panel" id="tab-all-listings">
+  <h2 class="mb-lg">All Listings</h2>
+  <div class="filter-row">
+    <div class="form-group">
+      <input type="text" class="form-input" id="al-search" placeholder="Search title..." style="min-width:200px" onkeydown="if(event.key==='Enter')loadAllListings()">
+    </div>
+    <div class="form-group">
+      <select class="form-select" id="al-status" onchange="loadAllListings()">
+        <option value="">All Statuses</option>
+        <option value="active">Active</option>
+        <option value="pending">Pending</option>
+        <option value="occupied">Occupied</option>
+        <option value="suspended">Suspended</option>
+      </select>
+    </div>
+    <button onclick="loadAllListings()" class="btn btn--primary btn--sm">Filter</button>
+  </div>
+  <div class="table-wrap">
+    <table id="all-listings-table">
+      <thead><tr><th>#</th><th>Title</th><th>Estate</th><th>Type</th><th>Price</th><th>Status</th><th>Views</th><th>Actions</th></tr></thead>
+      <tbody id="all-listings-body"><tr><td colspan="8" style="text-align:center;padding:var(--space-xl);color:var(--text-muted)">Loading...</td></tr></tbody>
+    </table>
+  </div>
+  <div class="pagination mt-lg" id="al-pagination"></div>
+</div>
+
+<!-- ═══ REPORTS ═════════════════════════════════════ -->
+<div class="admin-panel" id="tab-reports">
+  <h2 class="mb-xl">Reports</h2>
+  <div id="reports-content">
+    <div class="skeleton" style="height:80px"></div>
+  </div>
+</div>
+
+<!-- ═══ USERS ════════════════════════════════════════ -->
+<div class="admin-panel" id="tab-users">
+  <h2 class="mb-lg">Users</h2>
+  <div class="filter-row">
+    <div class="form-group">
+      <input type="text" class="form-input" id="u-search" placeholder="Search name/phone..." onkeydown="if(event.key==='Enter')loadUsers()">
+    </div>
+    <div class="form-group">
+      <select class="form-select" id="u-role" onchange="loadUsers()">
+        <option value="">All Roles</option>
+        <option value="tenant">Tenants</option>
+        <option value="landlord">Landlords</option>
+        <option value="caretaker">Caretakers</option>
+        <option value="agent">Agents</option>
+        <option value="admin">Admins</option>
+      </select>
+    </div>
+    <button onclick="loadUsers()" class="btn btn--primary btn--sm">Search</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Name</th><th>Phone</th><th>Role</th><th>Listings</th><th>Verified</th><th>Joined</th></tr></thead>
+      <tbody id="users-body"><tr><td colspan="6" style="text-align:center;padding:var(--space-xl);color:var(--text-muted)">Loading...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Approve Modal -->
+<div class="modal-backdrop hidden" id="approve-modal">
+  <div class="modal">
+    <div class="modal__header">
+      <div class="modal__title">✅ Approve Listing</div>
+      <button onclick="UI.hideModal('approve-modal')" class="modal__close">×</button>
+    </div>
+    <div class="modal__body">
+      <p class="text-muted mb-md">Approving <strong id="approve-listing-title">this listing</strong> will make it live immediately and notify the landlord via SMS.</p>
+      <div class="form-group">
+        <label class="form-label">Internal Notes (optional)</label>
+        <textarea class="form-input" id="approve-notes" rows="3" placeholder="e.g. Physical inspection completed. Photos verified."></textarea>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button onclick="UI.hideModal('approve-modal')" class="btn btn--ghost">Cancel</button>
+      <button id="confirm-approve-btn" class="btn btn--primary">✅ Approve & Go Live</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal-backdrop hidden" id="reject-modal">
+  <div class="modal">
+    <div class="modal__header">
+      <div class="modal__title">❌ Reject Listing</div>
+      <button onclick="UI.hideModal('reject-modal')" class="modal__close">×</button>
+    </div>
+    <div class="modal__body">
+      <div class="form-group">
+        <label class="form-label">Rejection Reason * <span style="font-size:0.75rem;color:var(--text-muted)">(sent to landlord via SMS)</span></label>
+        <select class="form-select mb-sm" id="reject-reason-select" onchange="if(this.value) document.getElementById('reject-reason').value = this.value">
+          <option value="">Choose a reason template...</option>
+          <option value="Photos are unclear or not showing the actual unit. Please upload clear, well-lit photos of the interior.">Poor photo quality</option>
+          <option value="The price listed does not match the local market rate. Please review and update.">Incorrect price</option>
+          <option value="The location/street information provided is incorrect or incomplete.">Wrong location info</option>
+          <option value="The description contains false or misleading information.">Misleading description</option>
+          <option value="We could not reach the caretaker on the provided number. Please update the contact.">Unreachable caretaker</option>
+        </select>
+        <textarea class="form-input" id="reject-reason" rows="3" placeholder="Reason will be sent to the landlord via SMS..."></textarea>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button onclick="UI.hideModal('reject-modal')" class="btn btn--ghost">Cancel</button>
+      <button id="confirm-reject-btn" class="btn btn--danger">❌ Reject & Notify</button>
+    </div>
+  </div>
+</div>
+
+<!-- Suspend Modal -->
+<div class="modal-backdrop hidden" id="suspend-modal">
+  <div class="modal">
+    <div class="modal__header">
+      <div class="modal__title">🚫 Suspend Listing</div>
+      <button onclick="UI.hideModal('suspend-modal')" class="modal__close">×</button>
+    </div>
+    <div class="modal__body">
+      <div class="form-group">
+        <label class="form-label">Suspension Reason *</label>
+        <textarea class="form-input" id="suspend-reason" rows="3" placeholder="Why is this listing being suspended?"></textarea>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button onclick="UI.hideModal('suspend-modal')" class="btn btn--ghost">Cancel</button>
+      <button id="confirm-suspend-btn" class="btn btn--danger">🚫 Suspend</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  let activeListingId = null;
+  let alPage = 1;
+
+  // ─── Auth Guard ──────────────────────────
+  if (!api.isLoggedIn()) { window.location.href = 'auth.html'; }
+  const user = api.getUser();
+  if (user?.role !== 'admin') {
+    alert('Admin access required.'); window.location.href = 'index.html';
+  }
+  document.getElementById('admin-user-label').textContent = `Admin: ${user?.name}`;
+
+  // ─── Init ────────────────────────────────
+  (async function() {
+    await loadDashStats();
+  })();
+
+  async function loadDashStats() {
+    try {
+      const s = await api.admin.stats();
+      document.getElementById('d-pending').textContent = s.listings?.pending || 0;
+      document.getElementById('d-active').textContent  = s.listings?.active  || 0;
+      document.getElementById('d-reports').textContent = s.reports?.open     || 0;
+      document.getElementById('d-users').textContent   = s.users_total       || 0;
+    } catch(e) {}
+  }
+
+  // ─── Tabs ────────────────────────────────
+  function showTab(name) {
+    document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(`tab-${name}`).classList.add('active');
+    event.target.classList.add('active');
+
+    if (name === 'pending')      loadPending();
+    if (name === 'all-listings') loadAllListings();
+    if (name === 'reports')      loadReports();
+    if (name === 'users')        loadUsers();
+  }
+
+  // ─── Pending ─────────────────────────────
+  async function loadPending() {
+    const container = document.getElementById('pending-content');
+    try {
+      const data = await api.admin.pendingListings();
+      const listings = data.data || data;
+      if (!listings.length) {
+        container.innerHTML = `<div class="empty-state"><div class="empty-state__icon">🎉</div><div class="empty-state__title">All Clear!</div><p class="text-muted">No listings pending verification.</p></div>`;
+        return;
+      }
+      container.innerHTML = listings.map(l => `
+        <div class="card mb-md listing-row">
+          <div class="card__body">
+            <div style="display:flex;gap:var(--space-lg);align-items:flex-start;flex-wrap:wrap">
+              <div style="flex:1;min-width:260px">
+                <div class="flex gap-sm mb-sm">
+                  <span class="tag">${UI.houseTypeLabel(l.type)}</span>
+                  <span class="tag tag--gold">⏳ Pending</span>
+                </div>
+                <h3 style="margin-bottom:var(--space-sm)">${l.title}</h3>
+                <p class="text-sm text-muted mb-sm">📍 ${l.estate?.name || '—'} · ${UI.formatPrice(l.price)}/mo</p>
+                <p class="text-sm text-muted">📞 ${l.caretaker_phone || '—'} | 👤 ${l.caretaker_name || '—'}</p>
+                <p class="text-sm text-muted mt-sm" style="max-width:500px">${l.description?.slice(0, 120) || ''}${l.description?.length > 120 ? '...' : ''}</p>
+              </div>
+              <div class="action-btns">
+                <a href="listing-detail.html?id=${l.id}" target="_blank" class="btn btn--ghost btn--sm">👁 View</a>
+                <button onclick="openApprove(${l.id}, '${l.title.replace(/'/g,"\\'")}', this)" class="btn btn--primary btn--sm">✅ Approve</button>
+                <button onclick="openReject(${l.id}, this)" class="btn btn--sm" style="background:var(--red-100);color:var(--danger);border:none">❌ Reject</button>
+                <button onclick="openSuspend(${l.id}, this)" class="btn btn--ghost btn--sm">🚫 Suspend</button>
+              </div>
+            </div>
+          </div>
+        </div>`).join('');
+    } catch(e) {
+      container.innerHTML = `<div class="alert alert--error">Error: ${e.message}</div>`;
+    }
+  }
+
+  // ─── All Listings ─────────────────────────
+  async function loadAllListings(page = 1) {
+    alPage = page;
+    const body = document.getElementById('all-listings-body');
+    body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:var(--space-xl);color:var(--text-muted)">Loading...</td></tr>`;
+    try {
+      const params = { page };
+      const status = document.getElementById('al-status').value;
+      const search = document.getElementById('al-search').value.trim();
+      if (status) params.status = status;
+      if (search) params.search = search;
+
+      const data = await api.admin.allListings(params);
+      const listings = data.data || [];
+      body.innerHTML = listings.map(l => `
+        <tr>
+          <td>${l.id}</td>
+          <td><a href="listing-detail.html?id=${l.id}" target="_blank" style="color:var(--primary);font-weight:600">${l.title}</a></td>
+          <td>${l.estate?.name || '—'}</td>
+          <td>${UI.houseTypeLabel(l.type)}</td>
+          <td>${UI.formatPrice(l.price)}</td>
+          <td><span class="tag ${l.status === 'active' ? 'tag--green' : l.status === 'pending' ? 'tag--gold' : l.status === 'suspended' ? 'tag--red' : ''}">${l.status}</span></td>
+          <td>${l.views_count || 0}</td>
+          <td>
+            <div class="action-btns">
+              ${l.status === 'pending' ? `<button onclick="openApprove(${l.id}, '${l.title.replace(/'/g,"\\'")}', this)" class="btn btn--primary btn--sm">Approve</button>` : ''}
+              ${l.status === 'active'  ? `<button onclick="openSuspend(${l.id}, this)" class="btn btn--sm" style="background:var(--gray-100);border:none">Suspend</button>` : ''}
+              ${l.status !== 'pending' ? `` : `<button onclick="openReject(${l.id}, this)" class="btn btn--sm" style="background:var(--red-100);color:var(--danger);border:none">Reject</button>`}
+              <button onclick="featureListing(${l.id}, this)" class="btn btn--sm btn--gold">⭐ Feature</button>
+            </div>
+          </td>
+        </tr>`).join('') || `<tr><td colspan="8" style="text-align:center;padding:var(--space-xl);color:var(--text-muted)">No listings found.</td></tr>`;
+
+      // Pagination
+      renderPagination(data.current_page, data.last_page, 'loadAllListings', 'al-pagination');
+    } catch(e) {
+      body.innerHTML = `<tr><td colspan="8"><div class="alert alert--error">Error: ${e.message}</div></td></tr>`;
+    }
+  }
+
+  // ─── Reports ─────────────────────────────
+  async function loadReports() {
+    const container = document.getElementById('reports-content');
+    try {
+      const data = await api.admin.reports();
+      const reports = data.data || data;
+      if (!reports.length) {
+        container.innerHTML = `<div class="empty-state"><div class="empty-state__icon">✅</div><div class="empty-state__title">No open reports!</div><p class="text-muted">All reports have been handled.</p></div>`;
+        return;
+      }
+      container.innerHTML = `<div class="table-wrap"><table>
+        <thead><tr><th>#</th><th>Listing</th><th>Reason</th><th>Details</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+          ${reports.map(r => `
+            <tr>
+              <td>${r.id}</td>
+              <td><a href="listing-detail.html?id=${r.listing_id}" target="_blank" style="color:var(--primary)">${r.listing?.title || r.listing_id}</a></td>
+              <td><span class="tag">${(r.reason || '—').replace(/_/g, ' ')}</span></td>
+              <td style="max-width:200px;font-size:0.85rem;color:var(--text-muted)">${r.details || '—'}</td>
+              <td><span class="tag ${r.status === 'open' ? 'tag--red' : 'tag--green'}">${r.status}</span></td>
+              <td>
+                ${r.status === 'open' ? `
+                  <div class="action-btns">
+                    <button onclick="resolveReport(${r.id}, 'dismissed', this)" class="btn btn--ghost btn--sm">Dismiss</button>
+                    <button onclick="resolveReport(${r.id}, 'actioned', this)" class="btn btn--danger btn--sm">Action</button>
+                  </div>` : '—'}
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table></div>`;
+    } catch(e) {
+      container.innerHTML = `<div class="alert alert--error">Error: ${e.message}</div>`;
+    }
+  }
+
+  async function resolveReport(id, action, btn) {
+    UI.setLoading(btn, true);
+    try {
+      await api.admin.resolveReport(id, action, '');
+      UI.toast(`Report ${action}.`, 'success');
+      loadReports();
+    } catch(e) { UI.toast(e.message, 'error'); }
+    finally { UI.setLoading(btn, false); }
+  }
+
+  // ─── Users ────────────────────────────────
+  async function loadUsers() {
+    const body = document.getElementById('users-body');
+    body.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:var(--space-xl);color:var(--text-muted)">Loading...</td></tr>`;
+    try {
+      const params = {};
+      const role   = document.getElementById('u-role').value;
+      const search = document.getElementById('u-search').value.trim();
+      if (role)   params.role   = role;
+      if (search) params.search = search;
+      const data  = await api.admin.users(params);
+      const users = data.data || [];
+      body.innerHTML = users.map(u => `
+        <tr>
+          <td><span class="font-semi">${u.name}</span></td>
+          <td>${u.phone}</td>
+          <td><span class="tag">${u.role}</span></td>
+          <td>${u.listings_count || 0}</td>
+          <td>${u.phone_verified_at ? '<span class="tag tag--green">✓ Yes</span>' : '<span class="tag tag--red">No</span>'}</td>
+          <td class="text-muted text-sm">${UI.formatDate(u.created_at)}</td>
+        </tr>`).join('') || `<tr><td colspan="6" style="text-align:center;padding:var(--space-xl)">No users found.</td></tr>`;
+    } catch(e) {
+      body.innerHTML = `<tr><td colspan="6"><div class="alert alert--error">Error: ${e.message}</div></td></tr>`;
+    }
+  }
+
+  // ─── Modals ───────────────────────────────
+  function openApprove(id, title, btn) {
+    activeListingId = id;
+    document.getElementById('approve-listing-title').textContent = title;
+    document.getElementById('approve-notes').value = '';
+    UI.showModal('approve-modal');
+  }
+  function openReject(id, btn) {
+    activeListingId = id;
+    document.getElementById('reject-reason').value = '';
+    UI.showModal('reject-modal');
+  }
+  function openSuspend(id, btn) {
+    activeListingId = id;
+    document.getElementById('suspend-reason').value = '';
+    UI.showModal('suspend-modal');
+  }
+
+  document.getElementById('confirm-approve-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('confirm-approve-btn');
+    UI.setLoading(btn, true);
+    try {
+      await api.admin.approve(activeListingId, document.getElementById('approve-notes').value);
+      UI.hideModal('approve-modal');
+      UI.toast('✅ Listing approved and is now live!', 'success');
+      loadPending(); loadDashStats();
+    } catch(e) { UI.toast(e.message, 'error'); }
+    finally { UI.setLoading(btn, false); }
+  });
+
+  document.getElementById('confirm-reject-btn').addEventListener('click', async () => {
+    const reason = document.getElementById('reject-reason').value.trim();
+    if (!reason) { UI.toast('Please enter a rejection reason.', 'warning'); return; }
+    const btn = document.getElementById('confirm-reject-btn');
+    UI.setLoading(btn, true);
+    try {
+      await api.admin.reject(activeListingId, reason);
+      UI.hideModal('reject-modal');
+      UI.toast('Listing rejected. Landlord notified.', 'success');
+      loadPending(); loadDashStats();
+    } catch(e) { UI.toast(e.message, 'error'); }
+    finally { UI.setLoading(btn, false); }
+  });
+
+  document.getElementById('confirm-suspend-btn').addEventListener('click', async () => {
+    const reason = document.getElementById('suspend-reason').value.trim();
+    if (!reason) { UI.toast('Please enter a reason.', 'warning'); return; }
+    const btn = document.getElementById('confirm-suspend-btn');
+    UI.setLoading(btn, true);
+    try {
+      await api.admin.suspend(activeListingId, reason);
+      UI.hideModal('suspend-modal');
+      UI.toast('Listing suspended.', 'success');
+      loadPending(); loadAllListings(); loadDashStats();
+    } catch(e) { UI.toast(e.message, 'error'); }
+    finally { UI.setLoading(btn, false); }
+  });
+
+  async function featureListing(id, btn) {
+    UI.setLoading(btn, true);
+    try {
+      await api.admin.feature(id, 7);
+      UI.toast('Listing featured for 7 days!', 'success');
+    } catch(e) { UI.toast(e.message, 'error'); }
+    finally { UI.setLoading(btn, false); }
+  }
+
+  // Close modals on backdrop click
+  document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+    backdrop.addEventListener('click', e => {
+      if (e.target === backdrop) {
+        backdrop.classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+    });
+  });
+
+  function renderPagination(current, last, fn, containerId) {
+    if (last <= 1) { document.getElementById(containerId).innerHTML = ''; return; }
+    let html = `<button class="page-btn" onclick="${fn}(${current - 1})" ${current <= 1 ? 'disabled' : ''}>‹</button>`;
+    for (let i = 1; i <= last; i++) {
+      if (i === 1 || i === last || Math.abs(i - current) <= 2) {
+        html += `<button class="page-btn ${i === current ? 'active' : ''}" onclick="${fn}(${i})">${i}</button>`;
+      } else if (Math.abs(i - current) === 3) { html += `…`; }
+    }
+    html += `<button class="page-btn" onclick="${fn}(${current + 1})" ${current >= last ? 'disabled' : ''}>›</button>`;
+    document.getElementById(containerId).innerHTML = html;
+  }
+
+  async function handleLogout() {
+    try { await api.auth.logout(); } catch(e) {}
+    api.clearSession();
+    window.location.href = 'index.html';
+  }
+</script>
+</body>
+</html>
